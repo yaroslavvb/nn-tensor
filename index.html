@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tensor Decompositions, Interactively</title>
+<meta name="description" content="An interactive walkthrough of the common low-rank tensor decompositions — CPD, Tucker, Tensor Train, Hierarchical Tucker, and friends — and why neural network theory cares about them.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand">🧊 nn-tensor</span>
+    <div class="nav-links" id="navlinks">
+      <a href="#sec-basics">Basics</a>
+      <a href="#sec-rank1">Rank-1</a>
+      <a href="#sec-cpd">CPD</a>
+      <a href="#sec-tucker">Tucker</a>
+      <a href="#sec-tt">TT &amp; HT</a>
+      <a href="#sec-family">Beyond</a>
+      <a href="#sec-nn">Neural nets</a>
+      <a href="#sec-quiz">Quiz</a>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
+</nav>
+
+<header class="hero">
+  <h1>Tensor Decompositions, <em>Interactively</em></h1>
+  <p class="hero-sub">A hands-on walkthrough of the common low-rank tensor formats — CPD, Tucker,
+     Tensor Train &amp; Hierarchical Tucker, and their relatives — and why they became a core tool
+     for understanding neural networks.</p>
+  <p class="hero-cite">Based on the review <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">
+     “Low-Rank Tensor Decompositions for the Theory of Neural Networks”</a> by
+     R.&nbsp;Borsoi, K.&nbsp;Usevich, and M.&nbsp;Clausel (IEEE Signal Processing Magazine; arXiv:2508.18408).</p>
+  <a class="hero-start" href="#sec-basics">Start the walkthrough ↓</a>
+</header>
+
+<main>
+
+<!-- ============================================================= -->
+<section id="sec-basics" class="step">
+  <div class="step-tag">Step 1 of 8</div>
+  <h2>Tensors in sixty seconds</h2>
+
+  <p>A <strong>tensor</strong> is just a multidimensional array. The number of dimensions is called
+  its <strong>order</strong> (or the number of <strong>modes</strong>): a vector
+  \(\boldsymbol{x}\) is an order-1 tensor, a matrix \(\boldsymbol{X}\) is order-2, and
+  \(\mathcal{X}\in\mathbb{R}^{I\times J\times K}\) is an order-3 tensor whose entries are indexed
+  as \(\mathcal{X}_{i,j,k}\). Slicing along modes gives <em>fibers</em> (fix all indices but one)
+  and <em>slices</em> (fix all but two) — e.g. \(\mathcal{X}_{:,:,k}\) is the \(k\)-th
+  <em>frontal slice</em>.</p>
+
+  <div class="widget" id="w-explorer">
+    <div class="widget-head">
+      <h3>Explore an order-3 tensor</h3>
+      <p>A \(4\times 3\times 2\) tensor shown as its two frontal slices. Hover any entry to read
+      \(\mathcal{X}_{i,j,k}\); pick a highlight mode to see the fiber or slice that entry belongs to.</p>
+    </div>
+    <div class="controls" id="explorer-controls">
+      <span class="ctl-label">Highlight:</span>
+      <div class="seg" role="group" aria-label="highlight mode">
+        <button data-hl="entry" class="on">entry</button>
+        <button data-hl="fiber1">mode-1 fiber</button>
+        <button data-hl="fiber2">mode-2 fiber</button>
+        <button data-hl="fiber3">mode-3 fiber</button>
+        <button data-hl="slice3">frontal slice</button>
+      </div>
+    </div>
+    <div class="explorer-body">
+      <div id="explorer-slices" class="slice-row"></div>
+      <div class="readout" id="explorer-readout">hover an entry…</div>
+    </div>
+  </div>
+
+  <p>Why do these show up around neural networks? Everywhere:
+  a convolution layer’s kernel is naturally an order-4 tensor
+  (input channels × output channels × height × width), a batch of images is order-4,
+  the joint action-value function of a multi-agent RL problem is a high-order tensor,
+  and — as we’ll see — the <em>derivatives</em> and <em>moments</em> of a network are tensors whose
+  structure reveals the network’s weights.</p>
+
+  <div class="callout note">
+    <strong>The curse of dimensionality.</strong> An order-\(d\) tensor with \(n\) entries per mode
+    holds \(n^d\) numbers. At \(n=10,\ d=15\) that is already \(10^{15}\) — a petabyte of floats.
+    Low-rank <em>decompositions</em> are the escape hatch: they represent big tensors with few
+    parameters by exploiting structure, exactly like a low-rank factorization
+    \(\boldsymbol{X}=\boldsymbol{A}\boldsymbol{B}^\top\) does for matrices.
+  </div>
+
+  <div class="stepnav"><span></span><a class="next" href="#sec-rank1">Next: the rank-1 building block →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-rank1" class="step">
+  <div class="step-tag">Step 2 of 8</div>
+  <h2>The building block: rank-1 tensors</h2>
+
+  <p>Every decomposition in this tutorial is assembled from one primitive: the
+  <strong>outer product</strong>. For vectors \(\boldsymbol{a}\in\mathbb{R}^I\),
+  \(\boldsymbol{b}\in\mathbb{R}^J\), \(\boldsymbol{c}\in\mathbb{R}^K\),</p>
+  <div class="eq">$$\mathcal{X} \;=\; \boldsymbol{a}\otimes\boldsymbol{b}\otimes\boldsymbol{c}
+  \qquad\Longleftrightarrow\qquad \mathcal{X}_{i,j,k} = a_i\, b_j\, c_k ,$$</div>
+  <p>an order-3 <strong>rank-1 tensor</strong>. It is maximally structured: every fiber in a given mode is a
+  scaled copy of the same vector. (For matrices this is the familiar
+  \(\boldsymbol{a}\otimes\boldsymbol{b}=\boldsymbol{a}\boldsymbol{b}^\top\).)</p>
+
+  <div class="widget" id="w-outer">
+    <div class="widget-head">
+      <h3>Outer-product playground</h3>
+      <p>Drag the sliders to edit \(\boldsymbol{a}\in\mathbb{R}^4\), \(\boldsymbol{b}\in\mathbb{R}^3\),
+      \(\boldsymbol{c}\in\mathbb{R}^2\) and watch the rank-1 tensor
+      \(\mathcal{X}_{i,j,k}=a_i b_j c_k\) respond. Notice how one slider rescales an entire
+      row, column, or slice at once — that’s what “rank-1” means.</p>
+    </div>
+    <div class="outer-grid">
+      <div class="vec-editor" id="vec-a"><div class="vec-title">a (mode 1)</div></div>
+      <div class="vec-editor" id="vec-b"><div class="vec-title">b (mode 2)</div></div>
+      <div class="vec-editor" id="vec-c"><div class="vec-title">c (mode 3)</div></div>
+      <div class="outer-result">
+        <div class="vec-title">X = a ⊗ b ⊗ c</div>
+        <div id="outer-slices" class="slice-row"></div>
+        <div class="readout" id="outer-readout"></div>
+      </div>
+    </div>
+  </div>
+
+  <p>The <strong>tensor rank</strong> (CP rank) of a general tensor \(\mathcal{T}\) is the smallest
+  number \(R\) of rank-1 tensors that sum to it. That single definition powers the first — and most
+  important — decomposition of this tutorial.</p>
+
+  <div class="stepnav"><a class="prev" href="#sec-basics">← Basics</a><a class="next" href="#sec-cpd">Next: CPD →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-cpd" class="step">
+  <div class="step-tag">Step 3 of 8</div>
+  <h2>Canonical Polyadic Decomposition (CPD)</h2>
+
+  <p>The <strong>CPD</strong> writes a tensor as a sum of \(R\) rank-1 <em>components</em>
+  — the direct generalization of the low-rank matrix factorization
+  \(\boldsymbol{X}=\sum_r \boldsymbol{a}_r\boldsymbol{b}_r^\top = \boldsymbol{A}\boldsymbol{B}^\top\):</p>
+  <div class="eq">$$\mathcal{T} \;=\; \sum_{r=1}^{R} \boldsymbol{a}_r \otimes \boldsymbol{b}_r \otimes \boldsymbol{c}_r,
+  \qquad \mathcal{T}_{ijk} = \sum_{r=1}^{R} A_{ir}B_{jr}C_{kr}
+  \tag{paper eq. 1}$$</div>
+  <p>The vectors group into <strong>factor matrices</strong>
+  \(\boldsymbol{A}\in\mathbb{R}^{I\times R}\), \(\boldsymbol{B}\in\mathbb{R}^{J\times R}\),
+  \(\boldsymbol{C}\in\mathbb{R}^{K\times R}\) — one per mode. The minimal such \(R\) is the
+  <strong>tensor rank</strong>. Storage drops from \(IJK\) to \(R(I{+}J{+}K)\) numbers.</p>
+
+  <div class="widget" id="w-cpd">
+    <div class="widget-head">
+      <h3>Fit a CPD by alternating least squares — live</h3>
+      <p>Below is a fixed \(4\times4\times4\) tensor built (secretly) from <em>3</em> rank-1
+      components. Choose the number of components \(R\) and this page runs real
+      <strong>ALS</strong> (alternating least squares) in your browser to fit
+      \(\hat{\mathcal T}=\sum_{r=1}^{R}\boldsymbol a_r\otimes\boldsymbol b_r\otimes\boldsymbol c_r\).
+      Watch the error collapse to machine precision exactly when \(R\) reaches the true rank.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">Components R
+        <input type="range" id="cpd-rank" min="1" max="5" step="1" value="1">
+        <output id="cpd-rank-out">1</output>
+      </label>
+      <button class="btn" id="cpd-refit">↻ refit from a new random start</button>
+    </div>
+    <div class="cpd-grid">
+      <div class="cpd-left">
+        <div class="stat-tile">
+          <div class="stat-label">relative error &nbsp;‖T − T̂‖<sub>F</sub> / ‖T‖<sub>F</sub></div>
+          <div class="stat-value" id="cpd-err">—</div>
+          <div class="stat-note" id="cpd-verdict"></div>
+        </div>
+        <div id="cpd-errchart"></div>
+      </div>
+      <div class="cpd-right">
+        <div class="factors-caption">fitted factor matrices (columns = components)</div>
+        <div class="factors-row">
+          <div class="factor-block"><div class="mat-title">A (4×R)</div><div id="cpd-A"></div></div>
+          <div class="factor-block"><div class="mat-title">B (4×R)</div><div id="cpd-B"></div></div>
+          <div class="factor-block"><div class="mat-title">C (4×R)</div><div id="cpd-C"></div></div>
+        </div>
+        <div class="controls">
+          <button class="btn" id="cpd-permute" disabled>⇄ permute components</button>
+          <button class="btn" id="cpd-rescale" disabled>λ · 1/λ rescale a component</button>
+        </div>
+        <div class="readout" id="cpd-uni-note">Fit with R ≥ 2 to try the uniqueness experiments.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="subhead">Uniqueness — the CPD’s superpower</h3>
+  <p>For order \(\ge 3\), the CPD is <strong>essentially unique</strong> under mild conditions:
+  the only freedom is <em>permuting</em> the rank-1 components and <em>rescaling within</em> a
+  component (e.g. \(\lambda\boldsymbol a_r,\ \tfrac1\lambda\boldsymbol b_r\)). Try both buttons
+  above: the factors visibly change, the tensor doesn’t — and nothing else preserves it.
+  Matrices enjoy no such property (\(\boldsymbol{X}=\boldsymbol{A}\boldsymbol{B}^\top
+  =\boldsymbol{A}\boldsymbol{Q}\,\boldsymbol{Q}^{-1}\boldsymbol{B}^\top\) for any invertible
+  \(\boldsymbol{Q}\)). The earliest sufficient conditions are due to Kruskal — in the simplest form:
+  \(\boldsymbol A,\boldsymbol B\) full column rank and \(\boldsymbol C\) without proportional
+  columns. Uniqueness is what makes CPD factors <em>interpretable</em> — and it is exactly the
+  property NN theory borrows to prove that network weights can be identified.</p>
+
+  <div class="fact-cards">
+    <div class="fact">
+      <h4>Rank can exceed dimensions</h4>
+      <p>Unlike matrices (rank ≤ min(I, J)), tensor rank routinely exceeds every mode size —
+      \(\boldsymbol{A}\) may have more columns than rows. A generic (random)
+      \(I\times I\times I\) tensor has rank about \(I^3/(3I-2)\), i.e. roughly \(I^2/3\).</p>
+      <div class="mini-calc">
+        <label>I <input type="range" id="grank-i" min="2" max="20" value="8"><output id="grank-i-out">8</output></label>
+        <div class="mini-calc-result" id="grank-result"></div>
+      </div>
+    </div>
+    <div class="fact">
+      <h4>Computation: NP-hard, yet practical</h4>
+      <p>Computing the CPD (and even deciding tensor rank) is NP-hard in general, and the best
+      rank-R approximation can be ill-posed. In practice, block-coordinate schemes like the ALS
+      you just ran work well, and under suitable conditions there are polynomial-time
+      <em>algebraic</em> algorithms based on eigenvalue computations.</p>
+    </div>
+    <div class="fact">
+      <h4>Generic uniqueness</h4>
+      <p>Uniqueness is not fragile: a random rank-\(r\) cubic tensor is identifiable for
+      <em>almost all</em> \(r\) below the generic rank — e.g. up to about
+      \(\lceil I^3/(3I{-}2)\rceil - 1\) components for \(I\times I\times I\), far above what
+      matrix intuition suggests.</p>
+    </div>
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-rank1">← Rank-1</a><a class="next" href="#sec-tucker">Next: Tucker →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-tucker" class="step">
+  <div class="step-tag">Step 4 of 8</div>
+  <h2>Tucker (multilinear) decomposition</h2>
+
+  <p>The second classic format keeps a small <strong>core tensor</strong> and mixes it into each
+  mode with a <strong>factor matrix</strong>:</p>
+  <div class="eq">$$\mathcal{T}_{ijk} \;=\; \sum_{r_1=1}^{R_1}\sum_{r_2=1}^{R_2}\sum_{r_3=1}^{R_3}
+  \mathcal{G}_{r_1,r_2,r_3}\, U_{i,r_1}\, V_{j,r_2}\, W_{k,r_3}
+  \tag{paper eq. 2}$$</div>
+  <p>with core \(\mathcal{G}\in\mathbb{R}^{R_1\times R_2\times R_3}\) and factors
+  \(\boldsymbol U\in\mathbb{R}^{I\times R_1},\ \boldsymbol V\in\mathbb{R}^{J\times R_2},\
+  \boldsymbol W\in\mathbb{R}^{K\times R_3}\). The tuple \((R_1,R_2,R_3)\) — the
+  <strong>multilinear ranks</strong> — equals the matrix ranks of the three
+  <em>matricizations</em> (unfoldings) of \(\mathcal T\). Because \(R_n \le I_n\) always holds,
+  a Tucker decomposition always exists — and the CPD is precisely the special case of a
+  <em>diagonal</em> core: \(\mathcal G_{r_1 r_2 r_3} \ne 0\) only when \(r_1=r_2=r_3\).</p>
+
+  <div class="widget" id="w-tucker">
+    <div class="widget-head">
+      <h3>Truncated HOSVD compressor</h3>
+      <p>The tensor here is \(8\times8\times8\) with entries
+      \(\mathcal T_{ijk} = 1/(1+x_i+y_j+z_k)\) — smooth, so its unfoldings have rapidly decaying
+      spectra. Choose multilinear ranks and this page computes a real truncated
+      <strong>HOSVD</strong> (higher-order SVD) in your browser: each factor comes from an SVD of
+      one unfolding, so the whole thing is fast, stable linear algebra — no iterations, no luck.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">R₁ <input type="range" id="tk-r1" min="1" max="8" value="3"><output id="tk-r1-out">3</output></label>
+      <label class="slider-ctl">R₂ <input type="range" id="tk-r2" min="1" max="8" value="3"><output id="tk-r2-out">3</output></label>
+      <label class="slider-ctl">R₃ <input type="range" id="tk-r3" min="1" max="8" value="3"><output id="tk-r3-out">3</output></label>
+    </div>
+    <div class="tucker-grid">
+      <div>
+        <div class="stat-tile">
+          <div class="stat-label">relative reconstruction error</div>
+          <div class="stat-value" id="tk-err">—</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">parameters: core + factors vs. full tensor</div>
+          <div class="stat-value" id="tk-params">—</div>
+          <div class="stat-note" id="tk-ratio"></div>
+        </div>
+      </div>
+      <div>
+        <div id="tucker-diagram"></div>
+        <div id="tk-errchart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="callout plus">
+      <strong>What Tucker buys you.</strong> Computing Tucker approximations is a tractable,
+      well-posed problem with efficient, stable SVD-based algorithms and well-understood
+      approximation error — unlike the NP-hard CPD. That is why it is widely used to compress
+      NN weights.
+    </div>
+    <div class="callout minus">
+      <strong>What it gives up.</strong> No uniqueness: insert any invertible \(\boldsymbol Q\)
+      between the core and a factor
+      (\(\boldsymbol U \!\to\! \boldsymbol U\boldsymbol Q\), core absorbs \(\boldsymbol Q^{-1}\))
+      and the tensor is unchanged. And the core itself has \(R_1R_2R_3\) entries — for an
+      order-\(d\) tensor that becomes \(R^d\), exponential in \(d\). Fixing that blow-up is the
+      job of the next section.
+    </div>
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-cpd">← CPD</a><a class="next" href="#sec-tt">Next: tensor networks →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-tt" class="step">
+  <div class="step-tag">Step 5 of 8</div>
+  <h2>Tensor networks: Tensor Train &amp; Hierarchical Tucker</h2>
+
+  <p>A <strong>tree tensor network</strong> generalizes Tucker by arranging factors as nodes of a
+  tree and summing along every internal edge. Each edge carries a <strong>bond dimension</strong>
+  (a rank); <em>dangling</em> edges are the tensor’s output indices. Two members of this family
+  dominate practice: the <strong>Tensor Train (TT)</strong> — the minimal, linear tree — and the
+  <strong>Hierarchical Tucker (HT)</strong> format, defined on a binary tree.</p>
+
+  <div class="widget" id="w-tn">
+    <div class="widget-head">
+      <h3>One family, three trees</h3>
+      <p>Click through the formats. Hover a node or edge to see what it is.
+      Summation runs along solid internal edges; dangling edges are the output indices
+      \(I_1,\dots,I_d\).</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="tn-tabs" role="group" aria-label="format">
+        <button data-tn="tucker" class="on">Tucker (star)</button>
+        <button data-tn="tt">Tensor Train (chain)</button>
+        <button data-tn="ht">Hierarchical Tucker (binary tree)</button>
+      </div>
+    </div>
+    <div id="tn-diagram"></div>
+    <div class="readout" id="tn-caption"></div>
+  </div>
+
+  <p>For the order-4 HT network above, the decomposition reads (paper eq. 3):</p>
+  <div class="eq">$$\mathcal{T}_{i_1,i_2,i_3,i_4} = \sum_{r_5,r_6}\mathcal G^{(3)}_{r_5,r_6}
+  \Big(\sum_{r_1,r_2}\mathcal G^{(1)}_{r_5,r_1,r_2} U^{(1)}_{i_1,r_1}U^{(2)}_{i_2,r_2}\Big)
+  \Big(\sum_{r_3,r_4}\mathcal G^{(2)}_{r_6,r_3,r_4} U^{(3)}_{i_3,r_3}U^{(4)}_{i_4,r_4}\Big).$$</div>
+
+  <h3 class="subhead">Why trees beat one big core: storage</h3>
+  <p>In TT and HT every node is a tensor of order at most 3, so storage grows
+  <em>linearly</em> with the order \(d\) — while the full tensor and the Tucker core grow
+  exponentially. This is the reason TT/HT are the formats of choice in high dimensions.</p>
+
+  <div class="widget" id="w-storage">
+    <div class="widget-head">
+      <h3>Storage explorer</h3>
+      <p>Parameter counts as the order \(d\) grows, for mode size \(n\) and all ranks/bond
+      dimensions equal to \(r\). The y-axis is logarithmic — straight lines are exponentials.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">mode size n <input type="range" id="st-n" min="2" max="10" value="10"><output id="st-n-out">10</output></label>
+      <label class="slider-ctl">rank r <input type="range" id="st-r" min="2" max="8" value="4"><output id="st-r-out">4</output></label>
+    </div>
+    <div id="storage-chart"></div>
+    <div class="readout">Full: \(n^d\) · Tucker: \(r^d + dnr\) · TT: \(2nr + (d{-}2)nr^2\) · HT: \(dnr + (d{-}2)r^3 + r^2\)</div>
+  </div>
+
+  <div class="callout note">
+    <strong>The depth-efficiency connection.</strong> TT/HT networks are exactly the coefficient
+    tensors of <em>deep</em> sum-product networks, while the CPD corresponds to a <em>shallow</em>
+    one. A generic tensor representable by a deep (HT or TT) network of small size has CP rank —
+    hence shallow-network size — <em>exponentially larger</em>. That is a theorem-grade version of
+    “depth helps,” obtained purely from tensor rank comparisons. Like Tucker, tree formats are not
+    unique, but they admit efficient and stable SVD-based algorithms, and their well-understood
+    generic ranks translate directly into expressivity results for the corresponding networks.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-tucker">← Tucker</a><a class="next" href="#sec-family">Next: the extended family →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-family" class="step">
+  <div class="step-tag">Step 6 of 8</div>
+  <h2>The extended family</h2>
+
+  <p>Beyond the big three, the paper highlights several variants that carry the theory of NNs
+  further. The most important is the <em>symmetric</em> CPD, because it is the format in which
+  neural networks literally hand you their weights.</p>
+
+  <h3 class="subhead">Symmetric CPD — and how it reads off a network’s weights</h3>
+  <p>A symmetric CPD imposes the same factor in every mode:
+  \(\mathcal T=\sum_r \lambda_r\, \boldsymbol a_r\otimes\boldsymbol a_r\otimes\boldsymbol a_r
+  = \sum_r \lambda_r\,\boldsymbol a_r^{\otimes 3}\). It is stable under perturbations and admits
+  polynomial-time algorithms for many rank regimes. Now take a 2-layer network
+  \(f(\boldsymbol x)=\boldsymbol a_2^\top\sigma(\boldsymbol A_1\boldsymbol x + \boldsymbol b_1)\)
+  and differentiate three times:</p>
+  <div class="eq">$$\nabla_{\boldsymbol x}^{(3)} f(\boldsymbol x)
+  \;=\; \sum_{i=1}^{d_1} \gamma^{(i)}(\boldsymbol x)\;
+  \boldsymbol a_1^{(i)}\otimes\boldsymbol a_1^{(i)}\otimes\boldsymbol a_1^{(i)}
+  \tag{paper eq. 9}$$</div>
+  <p>where \(\boldsymbol a_1^{(i)}\) is the \(i\)-th row of \(\boldsymbol A_1\) and
+  \(\gamma^{(i)}(\boldsymbol x)\) collects \(a_{2,i}\,\sigma'''(\cdot)\). The third derivative
+  <em>is</em> a symmetric CPD whose rank is the number of hidden neurons and whose factors are the
+  first-layer weights. Because the CPD is unique, decomposing this tensor recovers
+  \(\boldsymbol A_1\) — the seed of polynomial-time learning algorithms and identifiability
+  results for 2-layer networks (with moments/score functions replacing derivatives when only data
+  is available, via Stein’s lemma).</p>
+
+  <div class="widget" id="w-moments">
+    <div class="widget-head">
+      <h3>Check it numerically</h3>
+      <p>This page builds a random 2-layer network \(f(\boldsymbol x)=\boldsymbol a_2^\top
+      \tanh(\boldsymbol A_1 \boldsymbol x)\) with \(d_{\text{in}}=3\), \(d_1=4\), then compares the
+      symmetric-CPD formula above against a brute-force finite-difference estimate of
+      \(\nabla^{(3)} f\) at a random point. Same tensor, two very different routes.</p>
+    </div>
+    <div class="controls">
+      <button class="btn" id="mom-run">▶ new random network</button>
+    </div>
+    <div class="mom-grid">
+      <div>
+        <div class="mat-title">CPD formula &nbsp;Σᵢ γ⁽ⁱ⁾ a₁⁽ⁱ⁾⊗a₁⁽ⁱ⁾⊗a₁⁽ⁱ⁾ &nbsp;(frontal slices)</div>
+        <div id="mom-analytic" class="slice-row"></div>
+      </div>
+      <div>
+        <div class="mat-title">finite differences on f &nbsp;(frontal slices)</div>
+        <div id="mom-fd" class="slice-row"></div>
+      </div>
+    </div>
+    <div class="stat-tile slim">
+      <div class="stat-label">max entrywise deviation (should be ≈ finite-difference error, ~10⁻⁴)</div>
+      <div class="stat-value" id="mom-diff">—</div>
+    </div>
+  </div>
+
+  <div class="fact-cards">
+    <div class="fact">
+      <h4>Block-term decomposition (BTD)</h4>
+      <p>Replaces rank-1 components with low-rank <em>blocks</em>:
+      \(\mathcal T=\sum_r \mathcal T_r\) with each \(\mathcal T_r\) itself low-rank. More flexible
+      than CPD while keeping identifiability tools from algebraic geometry (most such additive
+      formats fall under the umbrella of <em>X-rank</em> decompositions).</p>
+    </div>
+    <div class="fact">
+      <h4>t-SVD (tubal rank)</h4>
+      <p>A decomposition for multichannel/3-D data that is a special case of the BTD with a fixed
+      factor. NNs with linear layers in this <em>tubal</em> format (“t-NN layers”) come with
+      generalization bounds that improve as the tubal ranks shrink.</p>
+    </div>
+    <div class="fact">
+      <h4>Paratuck-2</h4>
+      <p>A <em>non-additive</em> generalization of the CPD with uniqueness guarantees. Its slices
+      look like \(\ \boldsymbol A\,\mathrm{diag}(\cdot)\,\boldsymbol H\,\mathrm{diag}(\cdot)\,
+      \boldsymbol B\). Exactly this pattern appears in the Jacobian of a <em>3-layer</em> network
+      (paper eq. 11): $$\nabla^{(1)} f(\boldsymbol x_n) = \boldsymbol A_3\,
+      \mathrm{diag}(\sigma_2'(\boldsymbol z_n))\, \boldsymbol A_2\,
+      \mathrm{diag}(\sigma_1'(\boldsymbol t_n))\, \boldsymbol A_1 .$$
+      Hard to compute, but it extends derivative-based learning beyond two layers.</p>
+    </div>
+    <div class="fact">
+      <h4>Tensor ring &amp; friends</h4>
+      <p>Closing the TT chain into a loop gives the <em>tensor ring</em>; it shows up when studying
+      generative models with polynomial NN pushforwards, where method-of-moments learning turns out
+      to be equivalent to a tensor-ring decomposition.</p>
+    </div>
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-tt">← TT &amp; HT</a><a class="next" href="#sec-nn">Next: why neural nets care →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-nn" class="step">
+  <div class="step-tag">Step 7 of 8</div>
+  <h2>Why neural networks care</h2>
+
+  <p>The paper organizes the tensor–NN connection into four pillars:</p>
+
+  <div class="pillars">
+    <div class="pillar">
+      <div class="pillar-num">1</div>
+      <h4>Compression of weights</h4>
+      <p>Reshape (“tensorize”) a weight matrix into a tensor,
+      \(\mathrm{Ten}(\boldsymbol A_\ell)=\mathcal W_\ell\), then store it in CP/Tucker/TT format.
+      Fewer parameters, faster inference — computations run in the decomposed format without ever
+      reconstructing the full tensor. LoRA-style low-rank <em>gradient updates</em> are the
+      matrix case; tensorized variants push compression further. Low-rank weights can even
+      <em>help</em> generalization: bounds scale with the ranks, and training itself drifts toward
+      low-rank solutions (“neural collapse”).</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">2</div>
+      <h4>Expressivity &amp; approximation</h4>
+      <p>Sum-product networks (and polynomial NNs) compute
+      \(f(\boldsymbol x)=\langle\mathcal A,\ \phi(x_1)\otimes\cdots\otimes\phi(x_{d_{\text{in}}})\rangle\)
+      — an inner product between a rank-1 feature tensor and a coefficient tensor \(\mathcal A\).
+      Choosing the format of \(\mathcal A\) chooses the architecture: CPD ↔ shallow,
+      HT/TT ↔ deep. Rank comparisons between formats become width-vs-depth theorems, and
+      TT-format approximation theory connects NNs to classical smoothness (Besov) spaces.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">3</div>
+      <h4>Learning with derivatives &amp; moments</h4>
+      <p>As you verified above: derivatives (or score-function moments, via Stein’s lemma
+      \(\mathbb E\{f(\boldsymbol x)\otimes\mathcal S_m(\boldsymbol x)\}
+      =\mathbb E\{\nabla^{(m)}f(\boldsymbol x)\}\)) expose NN weights as factors of a unique
+      tensor decomposition. Consequences: polynomial-time learning of 2-layer (and some 3-layer)
+      networks, sample-complexity guarantees, and parameter identifiability — with symmetric CPD
+      the workhorse, Paratuck-2 for deeper models.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">4</div>
+      <h4>Emerging fronts</h4>
+      <p>Generative models with polynomial-NN pushforwards (learned via moments ↔ tensor ring),
+      hidden Markov models and RBMs as non-negative tensor networks, mixtures of linear
+      classifiers identified through CP decompositions of conditional moments, and low-rank
+      \(Q(\boldsymbol s,\boldsymbol u)\) tensors that cut sample complexity in reinforcement
+      learning.</p>
+    </div>
+  </div>
+
+  <h3 class="subhead">The cheat sheet</h3>
+  <p>The paper’s Table I, interactive: hover a row for the fine print.</p>
+
+  <div class="table-wrap">
+  <table class="cheat" id="cheat-table">
+    <thead>
+      <tr><th>Format</th><th>Compression</th><th>Unique?</th><th>Computing</th><th>Role in NN theory</th></tr>
+    </thead>
+    <tbody>
+      <tr data-tip="Sum of R rank-1 terms. Params R(I+J+K). Unique under mild (Kruskal-type) conditions; NP-hard in general but well studied, with algebraic algorithms in favorable regimes.">
+        <td>CP</td><td class="dots">●●</td><td class="yes">✓</td><td>NP-hard in general, but well studied</td>
+        <td>Generic ranks ↔ expressivity; NN learning with derivatives, flexible activations</td>
+      </tr>
+      <tr data-tip="CPD with equal factors across modes. The format of derivative/moment tensors of 2-layer NNs; stable under perturbations — the key to sample-complexity guarantees.">
+        <td>Symmetric CP</td><td class="dots">●</td><td class="yes">✓</td><td>Polynomial-time for some rank ranges</td>
+        <td>Stable under perturbations; learning NNs via derivatives / method of moments</td>
+      </tr>
+      <tr data-tip="Core G ∈ R^{R1×…} with factor matrices. Always exists with Rn ≤ In; SVD-based algorithms are fast and stable, but decomposition is never unique (rotate core, counter-rotate factor).">
+        <td>Tucker</td><td class="dots">●●●</td><td class="no">✗</td><td>Efficient linear-algebra algorithms</td>
+        <td>Widely used to compress NN weights</td>
+      </tr>
+      <tr data-tip="Tree tensor networks: TT = chain, HT = binary tree. Nodes are order-≤3 tensors, so storage is linear in the order d. Generic ranks known — the engine behind depth-separation results.">
+        <td>TT &amp; HT</td><td class="dots">●●●</td><td class="no">✗</td><td>Efficient linear-algebra algorithms</td>
+        <td>Known generic ranks ↔ expressivity; native format of deep sum-product architectures</td>
+      </tr>
+      <tr data-tip="Non-additive generalization of CPD with uniqueness guarantees; slices A·diag(·)·H·diag(·)·B. Appears in Jacobians of 3-layer networks.">
+        <td>Paratuck</td><td class="dots">●●</td><td class="yes">✓</td><td>Hard to compute</td>
+        <td>Linked to deep (&gt;2-layer) NNs by derivatives</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="readout" id="cheat-tip">hover a row…</div>
+
+  <div class="stepnav"><a class="prev" href="#sec-family">← Beyond</a><a class="next" href="#sec-quiz">Final step: quiz →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-quiz" class="step">
+  <div class="step-tag">Step 8 of 8</div>
+  <h2>Check yourself</h2>
+  <p>Seven quick questions. Answers are graded instantly, with the reasoning.</p>
+  <div id="quiz"></div>
+  <div class="stat-tile slim"><div class="stat-label">score</div><div class="stat-value" id="quiz-score">0 / 7</div></div>
+  <div class="stepnav"><a class="prev" href="#sec-nn">← Neural nets</a><span></span></div>
+</section>
+
+</main>
+
+<footer>
+  <p>An interactive companion to
+  <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">R. Borsoi, K. Usevich, M. Clausel,
+  “Low-Rank Tensor Decompositions for the Theory of Neural Networks,” IEEE Signal Processing Magazine
+  (arXiv:2508.18408)</a>. All demos run locally in your browser — no libraries, no server.
+  Built with Claude.</p>
+</footer>
+
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>
