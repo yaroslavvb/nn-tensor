@@ -25,6 +25,7 @@
       <a href="#sec-family">Beyond</a>
       <a href="#sec-nn">Neural nets</a>
       <a href="#sec-quiz">Quiz</a>
+      <a href="#sec-dives">Deep dives</a>
     </div>
   </div>
   <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
@@ -39,6 +40,7 @@
      “Low-Rank Tensor Decompositions for the Theory of Neural Networks”</a> by
      R.&nbsp;Borsoi, K.&nbsp;Usevich, and M.&nbsp;Clausel (IEEE Signal Processing Magazine; arXiv:2508.18408).</p>
   <a class="hero-start" href="#sec-basics">Start the walkthrough ↓</a>
+  <a class="hero-start" href="#sec-dives" style="background:transparent;color:var(--accent);border:1px solid var(--accent);margin-left:10px">Deep dives &amp; reports ↓</a>
 </header>
 
 <main>
@@ -573,7 +575,52 @@
   <p>Seven quick questions. Answers are graded instantly, with the reasoning.</p>
   <div id="quiz"></div>
   <div class="stat-tile slim"><div class="stat-label">score</div><div class="stat-value" id="quiz-score">0 / 7</div></div>
-  <div class="stepnav"><a class="prev" href="#sec-nn">← Neural nets</a><span></span></div>
+  <div class="stepnav"><a class="prev" href="#sec-nn">← Neural nets</a><a class="next" href="#sec-dives">Next: deep dives →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-dives" class="step">
+  <div class="step-tag">Companion pages</div>
+  <h2>Deep dives &amp; reports</h2>
+  <p>Four standalone companion pages grew out of this tutorial. Each takes one question from the
+  walkthrough above and runs it to the ground — same format, fully interactive, every number
+  computed live in your browser.</p>
+
+  <div class="fact-cards">
+    <div class="fact">
+      <h4><a href="depth.html">Why CP rank explodes while TT rank stays small</a></h4>
+      <p>An interactive proof-walkthrough of the exponential CP-vs-TT/HT separation behind
+      “depth helps”: the bipartition-unfolding lemma, a chain-of-links tensor whose crossing
+      unfolding is a giant identity matrix, live ALS fits that land exactly on the theoretical
+      error curve, and the Khrulkov–Novikov–Oseledets / Cohen–Sharir–Shashua theorems.</p>
+    </div>
+    <div class="fact">
+      <h4><a href="worstcase.html">Worst-case approximation: L² vs spectral norm</a></h4>
+      <p>What is provable about low-rank approximation with <em>no</em> structural assumptions.
+      In Frobenius norm every format is equally hopeless and only the parameter count matters; in
+      spectral norm a dimension-free rank-\(\lceil 1/\varepsilon^2\rceil\) theorem holds for every
+      tensor ever — and the CP-vs-TT-vs-Tucker ranking flips. With a live greedy-approximation lab
+      and per-cut adversary lower bounds.</p>
+    </div>
+    <div class="fact">
+      <h4><a href="gaussian.html">Compressing pure noise</a></h4>
+      <p>The exact best rank-\(r\) error of an \(n\times n\) Gaussian random matrix: Eckart–Young
+      plus the quarter-circle law give a closed-form error curve with power-law asymptotics —
+      spectral error \(\approx 0.785\,q\), Frobenius \(\approx 0.907\,q^{3/2}\) in the discarded
+      fraction \(q\), and captured energy only \(4r/n\) at low rank. Live SVD simulations laid
+      over the formula.</p>
+    </div>
+    <div class="fact">
+      <h4><a href="angle.html">The 90° wall: approximation error as an angle</a></h4>
+      <p>Measure error by the worst-case <em>angle</em> between \(Ax\) and \(Bx\) and low rank
+      fails maximally: the sharp \(\arcsin\lVert(B-A)A^{-1}\rVert_2\) bound, an angular
+      Eckart–Young theorem that degenerates to 90° at every deficient rank, and the escape routes
+      — spectral gaps, relative conditioning \(\big(\sin\Theta = \frac{\kappa-1}{\kappa+1}\big)\),
+      and typical-case inputs.</p>
+    </div>
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-quiz">← Quiz</a><span></span></div>
 </section>
 
 </main>

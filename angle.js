@@ -182,7 +182,7 @@ function aAngle2(u, v) {
     /* the ball of possible Bx endpoints */
     add(svg, "circle", { cx: tipx, cy: oy, r: Math.max(r, 0.1), fill: cssVar("--accent-2"), opacity: 0.08 });
     add(svg, "circle", { cx: tipx, cy: oy, r: Math.max(r, 0.1), fill: "none", stroke: cssVar("--accent-2"), "stroke-dasharray": "5 4", "stroke-width": 1.5 });
-    add(svg, "text", { x: tipx, y: oy - r - 8, "text-anchor": "middle", "font-size": 12, fill: cssVar("--muted") }, "‖Bx − Ax‖ ≤ η‖Ax‖");
+    add(svg, "text", { x: tipx + r + 12, y: oy - 8, "font-size": 12, fill: cssVar("--muted") }, "‖Bx − Ax‖ ≤ η‖Ax‖");
     /* Ax arrow */
     add(svg, "line", { x1: ox, y1: oy, x2: tipx - 4, y2: oy, stroke: cssVar("--ink-2"), "stroke-width": 2.5, "marker-end": "url(#arrA)" });
     add(svg, "text", { x: ox + L / 2, y: oy + 20, "text-anchor": "middle", "font-size": 13, "font-weight": 600, fill: cssVar("--ink-2") }, "Ax");
@@ -266,8 +266,8 @@ function aResample() {
       xs,
       series: [
         { name: "", color: cssVar("--accent-2"), ys: theory, dashed: true, noDots: true },
-        { name: "adversarial x", color: cssVar("--accent"), ys: adv, noDots: true, labelAt: "start", labelDy: -6 },
-        { name: "random x (median)", color: cssVar("--accent-2"), ys: medDeg, noDots: true }
+        { name: "adversarial x", color: cssVar("--accent"), ys: adv, noDots: true, labelAt: "start", labelDy: 18 },
+        { name: "random x", color: cssVar("--accent-2"), ys: medDeg, noDots: true }
       ],
       yMin: 0, yMax: 90,
       yTicks: [0, 30, 60, 90].map(v => ({ v, label: v + "°" })),
