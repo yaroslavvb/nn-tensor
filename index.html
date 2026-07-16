@@ -87,7 +87,7 @@
 
   <div class="callout note">
     <strong>The curse of dimensionality.</strong> An order-\(d\) tensor with \(n\) entries per mode
-    holds \(n^d\) numbers. At \(n=10,\ d=15\) that is already \(10^{15}\) — a petabyte of floats.
+    holds \(n^d\) numbers. At \(n=10,\ d=15\) that is already \(10^{15}\) — four petabytes as float32.
     Low-rank <em>decompositions</em> are the escape hatch: they represent big tensors with few
     parameters by exploiting structure, exactly like a low-rank factorization
     \(\boldsymbol{X}=\boldsymbol{A}\boldsymbol{B}^\top\) does for matrices.
@@ -197,8 +197,8 @@
   <h3 class="subhead">Uniqueness — the CPD’s superpower</h3>
   <p>For order \(\ge 3\), the CPD is <strong>essentially unique</strong> under mild conditions:
   the only freedom is <em>permuting</em> the rank-1 components and <em>rescaling within</em> a
-  component (e.g. \(\lambda\boldsymbol a_r,\ \tfrac1\lambda\boldsymbol b_r\)). Try both buttons
-  above: the factors visibly change, the tensor doesn’t — and nothing else preserves it.
+  component (e.g. \(\lambda\boldsymbol a_r,\ \tfrac1\lambda\boldsymbol b_r\)). Set \(R\ge 2\)
+  above, then try both buttons: the factors visibly change, the tensor doesn’t — and nothing else preserves it.
   Matrices enjoy no such property (\(\boldsymbol{X}=\boldsymbol{A}\boldsymbol{B}^\top
   =\boldsymbol{A}\boldsymbol{Q}\,\boldsymbol{Q}^{-1}\boldsymbol{B}^\top\) for any invertible
   \(\boldsymbol{Q}\)). The earliest sufficient conditions are due to Kruskal — in the simplest form:
@@ -210,8 +210,9 @@
     <div class="fact">
       <h4>Rank can exceed dimensions</h4>
       <p>Unlike matrices (rank ≤ min(I, J)), tensor rank routinely exceeds every mode size —
-      \(\boldsymbol{A}\) may have more columns than rows. A generic (random)
-      \(I\times I\times I\) tensor has rank about \(I^3/(3I-2)\), i.e. roughly \(I^2/3\).</p>
+      \(\boldsymbol{A}\) may have more columns than rows. A generic complex
+      \(I\times I\times I\) tensor has rank \(\lceil I^3/(3I-2)\rceil\) — roughly \(I^2/3\)
+      (over the reals several <em>typical ranks</em> can occur; this formula gives the smallest).</p>
       <div class="mini-calc">
         <label>I <input type="range" id="grank-i" min="2" max="20" value="8"><output id="grank-i-out">8</output></label>
         <div class="mini-calc-result" id="grank-result"></div>
@@ -321,7 +322,7 @@
   <div class="widget" id="w-tn">
     <div class="widget-head">
       <h3>One family, three trees</h3>
-      <p>Click through the formats. Hover a node or edge to see what it is.
+      <p>Click through the formats. Hover a node to see what it is.
       Summation runs along solid internal edges; dangling edges are the output indices
       \(I_1,\dots,I_d\).</p>
     </div>
@@ -361,9 +362,9 @@
   </div>
 
   <div class="callout note">
-    <strong>The depth-efficiency connection.</strong> TT/HT networks are exactly the coefficient
-    tensors of <em>deep</em> sum-product networks, while the CPD corresponds to a <em>shallow</em>
-    one. A generic tensor representable by a deep (HT or TT) network of small size has CP rank —
+    <strong>The depth-efficiency connection.</strong> Coefficient tensors of <em>deep</em>
+    sum-product networks correspond to (special cases of) HT/TT formats, while the CPD
+    corresponds to a <em>shallow</em> one. A generic tensor representable by a deep (HT or TT) network of small size has CP rank —
     hence shallow-network size — <em>exponentially larger</em>. That is a theorem-grade version of
     “depth helps,” obtained purely from tensor rank comparisons. Like Tucker, tree formats are not
     unique, but they admit efficient and stable SVD-based algorithms, and their well-understood
@@ -514,7 +515,7 @@
   </div>
 
   <h3 class="subhead">The cheat sheet</h3>
-  <p>The paper’s Table I, interactive: hover a row for the fine print.</p>
+  <p>The paper’s Table I, interactive: hover or focus a row for the fine print.</p>
 
   <div class="table-wrap">
   <table class="cheat" id="cheat-table">
@@ -566,8 +567,8 @@
   <p>An interactive companion to
   <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">R. Borsoi, K. Usevich, M. Clausel,
   “Low-Rank Tensor Decompositions for the Theory of Neural Networks,” IEEE Signal Processing Magazine
-  (arXiv:2508.18408)</a>. All demos run locally in your browser — no libraries, no server.
-  Built with Claude.</p>
+  (arXiv:2508.18408)</a>. All demos are dependency-free vanilla JS running in your browser —
+  only the math rendering (KaTeX) loads from a CDN. Built with Claude.</p>
 </footer>
 
 <script src="app.js"></script>

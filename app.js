@@ -176,6 +176,8 @@ function lineChart(container, cfg) {
   const svg = document.createElementNS(svgNS, "svg");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("class", "chart");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", cfg.label || "line chart");
   svg.style.width = "100%";
   const add = (parent, tag, attrs, text) => {
     const e = document.createElementNS(svgNS, tag);
@@ -374,10 +376,9 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
       wrap.appendChild(lab);
       slicesEl.appendChild(wrap);
     }
-    if (!readout.innerHTML) readout.textContent = "hover an entry to see its formula";
+    readout.textContent = "hover an entry to see its formula";  // reset: old formulas go stale on slider change
   }
   makeSliders("a"); makeSliders("b"); makeSliders("c");
-  readout.textContent = "hover an entry to see its formula";
   render();
   onSchemeChange(render);
 })();
@@ -482,6 +483,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
     const ys = xs.map(R => Math.log10(Math.max(fits[R] ? fits[R].err : 1, 1e-16)));
     lineChart(chartEl, {
       xs, yMin: -16, yMax: 0,
+      label: "CPD relative error versus number of components R",
       series: [{ name: "rel. error", color: cssVar("--accent"), ys }],
       yTicks: [0, -4, -8, -12, -16].map(v => ({ v, label: v === 0 ? "1" : `10${supStr(v)}` })),
       xLabel: "number of components R",
@@ -525,13 +527,14 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
   });
   btnScale.addEventListener("click", () => {
     const f = fits[+slider.value];
-    const lam = 2;
+    f.scaledUp = !f.scaledUp;               // toggle so repeated clicks stay bounded
+    const lam = f.scaledUp ? 2 : 0.5;
     f.A.forEach(row => row[0] *= lam);
     f.B.forEach(row => row[0] /= lam);
     f.err = relErr(f.A, f.B, f.C);
     drawFactors(f);
     errEl.innerHTML = fmtSci(Math.max(f.err, 1e-16));
-    uniNote.innerHTML = `Multiplied a₁ by λ=2 and divided b₁ by 2 — relative error still ${fmtSci(Math.max(f.err, 1e-16))}. Scaling inside a component is the other trivial ambiguity.`;
+    uniNote.innerHTML = `Multiplied a₁ by λ=${f.scaledUp ? "2" : "½"} and divided b₁ by the same λ — relative error still ${fmtSci(Math.max(f.err, 1e-16))}. Scaling inside a component is the other trivial ambiguity.`;
   });
 
   // precompute all fits (fast), then first paint
@@ -547,9 +550,11 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
   const res = document.getElementById("grank-result");
   function upd() {
     const I = +slider.value;
-    const rg = Math.ceil(I * I * I / (3 * I - 2));
+    // ceil(I^3/(3I-2)) is the generic complex rank for every I except the
+    // famous defective cube I = 3, whose generic rank is 5 (Strassen)
+    const rg = I === 3 ? 5 : Math.ceil(I * I * I / (3 * I - 2));
     out.textContent = I;
-    res.innerHTML = `random ${I}×${I}×${I} tensor → rank <b>${rg}</b>&nbsp; (a matrix that size caps at ${I})`;
+    res.innerHTML = `generic rank of a ${I}×${I}×${I} tensor → <b>${rg}</b>&nbsp; (over ℂ; smallest typical rank over ℝ — a matrix that size caps at ${I})`;
   }
   slider.addEventListener("input", upd);
   upd();
@@ -671,6 +676,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
     const xs = Array.from({ length: N }, (_, i) => i + 1);
     lineChart(chartEl, {
       xs, yMin: -16, yMax: 0,
+      label: "Tucker relative error versus uniform multilinear rank",
       series: [{ name: "rel. error", color: cssVar("--accent-2"), ys: uniformErr.map(e => Math.log10(Math.max(e, 1e-16))) }],
       yTicks: [0, -4, -8, -12, -16].map(v => ({ v, label: v === 0 ? "1" : `10${supStr(v)}` })),
       xLabel: "uniform multilinear rank (R, R, R)",
@@ -755,8 +761,11 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
     diagEl.innerHTML = diagrams[current]();
     capEl.textContent = captions[current];
     diagEl.querySelectorAll(".tn-node").forEach(n => {
+      n.setAttribute("tabindex", "0");
       n.addEventListener("mouseenter", () => { capEl.textContent = n.dataset.info; });
+      n.addEventListener("focus", () => { capEl.textContent = n.dataset.info; });
       n.addEventListener("mouseleave", () => { capEl.textContent = captions[current]; });
+      n.addEventListener("blur", () => { capEl.textContent = captions[current]; });
     });
   }
   document.querySelectorAll("#tn-tabs button").forEach(btn => {
@@ -796,6 +805,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
     const yMax = Math.ceil(Math.max(...L("full"), ...L("tucker"))) + 1;
     lineChart(chartEl, {
       xs, yMin: 0, yMax,
+      label: "Parameter counts versus tensor order d for full, Tucker, TT, and HT formats",
       series: [
         { name: "Full nᵈ", color: cssVar("--accent"), ys: L("full") },
         { name: "Tucker", color: cssVar("--accent-2"), ys: L("tucker") },
@@ -909,7 +919,10 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
 (function cheat() {
   const tip = document.getElementById("cheat-tip");
   document.querySelectorAll("#cheat-table tbody tr").forEach(tr => {
-    tr.addEventListener("mouseenter", () => { tip.textContent = tr.dataset.tip; });
+    tr.setAttribute("tabindex", "0");
+    const show = () => { tip.textContent = tr.dataset.tip; };
+    tr.addEventListener("mouseenter", show);
+    tr.addEventListener("focus", show);
   });
 })();
 
@@ -951,12 +964,12 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => re
       q: "Can the CP rank of a tensor exceed all of its mode dimensions?",
       opts: [
         "No — rank ≤ min dimension, like matrices",
-        "Yes — a random I×I×I tensor has rank ≈ I³/(3I−2), roughly I²/3",
+        "Yes — a generic I×I×I tensor has rank ≈ I³/(3I−2), roughly I²/3",
         "Only for complex-valued tensors",
         "Only for order ≥ 4"
       ],
       correct: 1,
-      why: "Unlike matrices, tensor rank routinely exceeds every dimension: the factor matrices simply get more columns than rows. The generic rank of a cubic tensor is ⌈I³/(3I−2)⌉."
+      why: "Unlike matrices, tensor rank routinely exceeds every dimension: the factor matrices simply get more columns than rows. The generic rank of a cubic tensor is ⌈I³/(3I−2)⌉ (over ℂ; for real tensors this is the smallest typical rank)."
     },
     {
       q: "You compute the third derivative ∇⁽³⁾f of a 2-layer network f(x) = a₂ᵀσ(A₁x + b₁). What do you get?",
