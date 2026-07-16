@@ -39,6 +39,14 @@ quarter-circle law, live in-browser SVD simulations laid over the closed-form er
 (parametrized by q = (2θ + sin 2θ)/π), and the asymptotic decay laws — spectral error ≈ (π/4)q,
 Frobenius error ≈ 0.907·q^(3/2) near full rank, and captured energy ≈ 4r/n at low rank.
 
+There is an **angular-error page** ([angle.html](https://yaroslavvb.github.io/nn-tensor/angle.html))
+on measuring approximation error by the worst-case angle between Ax and Bx: the operator-angle /
+antieigenvalue connection, the sharp Θ ≤ arcsin ‖(B−A)A⁻¹‖₂ bound, why every rank-deficient
+approximation of an invertible matrix hits 90° (a degenerate angular Eckart–Young theorem), and
+the escape routes — restricted inputs (arctan[(σ_{r+1}/σ_r)·√(1−γ²)/γ]), well-conditioned
+relative operators (sin Θ = (κ−1)/(κ+1), Kantorovich), and typical-case angles
+(arcsin of the relative Frobenius error).
+
 And a **deep-dive page** ([depth.html](https://yaroslavvb.github.io/nn-tensor/depth.html))
 walking through why CP rank is exponentially larger than TT/HT rank — the bipartition-unfolding
 lemma, a "chain of links" worked example whose crossing unfolding is a giant identity matrix,

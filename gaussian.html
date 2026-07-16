@@ -264,7 +264,10 @@
   Gavish–Donoho \(4/\sqrt3\) type. <strong>As a positive:</strong> in the additive model
   \(\text{data} = \text{signal} + \text{noise}\), the incompressibility of noise is the
   <em>good news</em> — the SVD can't accidentally "compress" the noise into your kept components;
-  what truncation keeps is (mostly) whatever structure was really there.</p>
+  what truncation keeps is (mostly) whatever structure was really there.
+  (And if you measure error by output <em>direction</em> rather than by a norm, the story is
+  harsher still — see the <a href="angle.html">angle deep dive</a>: the worst-case angle is 90°
+  at every rank, while the <em>typical</em> angle is exactly \(\arcsin\mathcal E_F\).)</p>
 
   <div class="callout plus">
     <strong>TL;DR.</strong> For an \(n\times n\) Gaussian matrix, the best rank-\(r\)
@@ -285,7 +288,8 @@
 <footer>
   <p>Part of the <a href="index.html">nn-tensor interactive tutorial</a> (companion to
   <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">arXiv:2508.18408</a>);
-  see also the <a href="worstcase.html">worst-case approximation report</a> and the
+  see also the <a href="angle.html">angular-error deep dive</a>, the
+  <a href="worstcase.html">worst-case approximation report</a>, and the
   <a href="depth.html">depth-separation deep dive</a>.
   Key references: C. Eckart, G. Young 1936; L. Mirsky 1960 (unitarily invariant norms);
   V. Marchenko, L. Pastur 1967 (bulk law); S. Geman 1980 (\(\sigma_1 \to 2\sqrt n\));

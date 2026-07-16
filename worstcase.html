@@ -20,6 +20,7 @@
       <a href="#sec-setup">Setup</a>
       <a href="#sec-fro">L² worst case</a>
       <a href="#sec-spec">Spectral theorem</a>
+      <a href="#sec-cliff">The cliff</a>
       <a href="#sec-formats">TT &amp; Tucker</a>
       <a href="#sec-verdict">Verdict</a>
     </div>
@@ -46,7 +47,7 @@
 
 <!-- ============================================================= -->
 <section id="sec-setup" class="step">
-  <div class="step-tag">Part 1 of 5</div>
+  <div class="step-tag">Part 1 of 6</div>
   <h2>The setup: one question, two norms</h2>
 
   <p>Fix order \(d\), mode size \(n\), and normalize \(\lVert\mathcal T\rVert_F = 1\). The question
@@ -115,7 +116,7 @@
 
 <!-- ============================================================= -->
 <section id="sec-fro" class="step">
-  <div class="step-tag">Part 2 of 5</div>
+  <div class="step-tag">Part 2 of 6</div>
   <h2>L² (Frobenius) worst case: incompressibility, for every format equally</h2>
 
   <p>In Frobenius norm the absolute worst case has a complete and entirely negative answer, and it
@@ -140,7 +141,9 @@
       <p>Idealized worst-case guarantees (constants and log factors dropped): in Frobenius,
       error \(\approx\sqrt{\max(0,\,1-P/n^d)}\) — a cliff at \(P \approx n^d\), i.e. you get
       essentially nothing until you pay for every entry. In spectral norm (Part 3’s theorem),
-      error \(\approx\min(1, \sqrt{dn/P})\) — falling from the very first parameters.</p>
+      error \(\approx\min(1, \sqrt{dn/P})\) — falling as soon as you can afford a single rank-1
+      term (\(P \approx dn\)), until the vertical drop at \(P = n^d\)
+      (dissected in <a href="#sec-cliff">Part 4</a>).</p>
     </div>
     <div class="controls">
       <label class="slider-ctl">n <input type="range" id="bud-n" min="4" max="12" value="8"><output id="bud-n-out">8</output></label>
@@ -163,7 +166,7 @@
 
 <!-- ============================================================= -->
 <section id="sec-spec" class="step">
-  <div class="step-tag">Part 3 of 5</div>
+  <div class="step-tag">Part 3 of 6</div>
   <h2>Spectral norm: a dimension-free worst-case theorem</h2>
 
   <p>Measured in \(\lVert\cdot\rVert_\sigma\), the absolute worst case is not merely better — it is
@@ -233,12 +236,105 @@
     gives rank \(\le \alpha^2/\varepsilon^2\)).
   </div>
 
-  <div class="stepnav"><a class="prev" href="#sec-fro">← L² worst case</a><a class="next" href="#sec-formats">Next: what TT and Tucker must pay →</a></div>
+  <div class="stepnav"><a class="prev" href="#sec-fro">← L² worst case</a><a class="next" href="#sec-cliff">Next: anatomy of the cliff →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-cliff" class="step">
+  <div class="step-tag">Part 4 of 6</div>
+  <h2>Anatomy of the cliff</h2>
+
+  <p>Look back at Part 2’s chart: the spectral curve
+  \(\;\mathrm{err}(P) = \min\bigl(1, \sqrt{dn/P}\bigr)\;\) glides down smoothly — and then, at
+  \(P = n^d\), drops <em>vertically</em> to zero. That wall is not a plotting glitch. It marks a
+  genuine phase change in the approximation problem, and now that we have the greedy theorem we can
+  say exactly what happens there. (There is also a smaller kink on the <em>left</em>, at
+  \(P = dn\): below the cost of a single rank-1 term the curve is clamped at 1 — the best you can
+  promise is the zero approximation, whose error is \(\lVert\mathcal T\rVert_\sigma \le 1\), and a
+  rank-1 tensor makes that bound tight.)</p>
+
+  <h3 class="subhead">The floor</h3>
+  <p>Every tensor satisfies
+  \(\lVert\mathcal T\rVert_\sigma \ge \lVert\mathcal T\rVert_F / n^{(d-1)/2}\), and random tensors
+  come within a \(\sqrt d\)-ish factor of saturating it:
+  \(\lVert\mathcal T\rVert_\sigma/\lVert\mathcal T\rVert_F \approx c\sqrt{dn}/n^{d/2}\).
+  Call this the <strong>floor</strong>: the spectral size of the incompressible bulk of tensor
+  space. A worst-case guarantee below the floor means beating not just structured adversaries but
+  the formless noise that fills almost all of the unit sphere.</p>
+
+  <h3 class="subhead">The collision: three milestones, one point</h3>
+  <div class="callout note">
+    <strong>Why the cliff sits exactly at \(P = n^d\).</strong> Set the greedy curve equal to the
+    floor and solve:
+    $$\sqrt{\frac{dn}{P}} \;=\; \frac{\sqrt{dn}}{n^{d/2}}
+    \qquad\Longleftrightarrow\qquad P \;=\; n^{d} \;=\; N .$$
+    The same point in three currencies:
+    <ul style="margin:8px 0 0">
+      <li><strong>Parameters</strong>: \(P = N\) — the budget equals the size of the tensor itself.</li>
+      <li><strong>Rank</strong>: \(R = P/(dn) = n^d/(dn)\) — precisely the <em>generic-rank</em> scale
+      of the space (for \(d=3\) this is \(n^2\!/3\), matching \(\lceil n^3\!/(3n-2)\rceil\) from the
+      main tutorial). At this rank scale, <em>every</em> tensor admits an exact CP representation
+      (maximal rank is at most twice the generic rank) — there is nothing left to approximate.</li>
+      <li><strong>Error</strong>: \(\varepsilon = \) the floor — the greedy has scraped away every
+      pattern any rank-1 probe can see; what remains is pure incompressible bulk.</li>
+    </ul>
+  </div>
+  <p>So the cliff is the moment <em>“approximate cheaply”</em> hands over to <em>“represent
+  exactly.”</em> Above the floor, squared spectral error trades for parameters at the fixed
+  greedy exchange rate — every \(\varepsilon^2\) of error costs \(dn/\varepsilon^2\)-ish parameters,
+  regardless of \(n^d\). At the floor, the exchange closes: the residual is a
+  \(\sigma\)-tiny-but-\(F\)-large noise ball (Part 2’s incompressible bulk), and the first budget
+  at which any format can eliminate it is the budget that stores it outright. The error snaps from
+  the floor to zero because exactness arrives wholesale, not gradually.</p>
+
+  <div class="widget" id="w-cliff">
+    <div class="widget-head">
+      <h3>The triple point, log–log</h3>
+      <p>Same curves as Part 2, but with both axes logarithmic — the anatomy becomes visible.
+      The greedy bound is a straight line of slope \(-\tfrac12\) (each 100× more parameters buys
+      10× less error); the floor is horizontal; the wall at \(P=N\) is vertical. <strong>All three
+      meet in a single point.</strong> The L² curve is shown for contrast: it hugs error ≈ 1 the
+      whole way and dives only at the same wall — the two norms share one cliff, approached from
+      opposite sides.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">n <input type="range" id="cl-n" min="4" max="12" value="8"><output id="cl-n-out">8</output></label>
+      <label class="slider-ctl">d <input type="range" id="cl-d" min="3" max="10" value="6"><output id="cl-d-out">6</output></label>
+    </div>
+    <div id="cliff-chart"></div>
+    <div class="readout" id="cliff-note"></div>
+  </div>
+
+  <h3 class="subhead">One wall, two cliffs</h3>
+  <p>Part 2’s Frobenius curve has a cliff at the same place, for the mirror-image reason. In
+  \(L^2\), the incompressible bulk <em>is</em> the energy, so it blocks progress from the very
+  first parameter: error \(\approx 1\) until \(P\approx N\), then everything at once. In the
+  spectral norm the bulk is <em>invisible</em> — no rank-1 probe can see it — so it costs nothing
+  until you insist on error below the floor, at which point it costs everything at once. Same
+  \(N\)-dimensional wall; the two norms just bill you for it at opposite ends of the budget.</p>
+
+  <div class="callout minus">
+    <strong>Fine print.</strong> (1) The plotted \(\sqrt{dn/P}\) is the greedy <em>upper</em> bound.
+    The matching flat-matrix adversaries of Part 5 certify it (up to constants) down to
+    \(\varepsilon \sim 1/\sqrt{2n}\); between there and the floor the curve remains a valid
+    guarantee, but the matching lower bound is heuristic for \(d\ge 3\). For matrices
+    (\(d=2\)) the picture is exact the whole way: the worst case is the flat spectrum, and the
+    cliff is literally “rank reached \(n\).”
+    (2) How sharp is the wall in truth? Just below \(P=N\) the proven bounds pin the worst-case
+    error between ≈ floor \(\times\sqrt{1-P/N}\) (Part 2’s covering bound converted to \(\sigma\))
+    and ≈ floor (the greedy line) — and the exact \(d=2\) answer sits at the <em>top</em>: the flat
+    spectrum keeps the error at ≈ floor until the very last rank, and a tensor orthogonal to any
+    linear format is likewise pinned at ≈ floor. So the wall really is a floor-sized <em>jump</em>,
+    not a taper (for nonlinear formats at \(d\ge3\) the sharpness is heuristic, like item (1)).
+    (3) Constants and log factors are dropped throughout, as everywhere in this report.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-spec">← Spectral theorem</a><a class="next" href="#sec-formats">Next: what TT and Tucker must pay →</a></div>
 </section>
 
 <!-- ============================================================= -->
 <section id="sec-formats" class="step">
-  <div class="step-tag">Part 4 of 5</div>
+  <div class="step-tag">Part 5 of 6</div>
   <h2>TT and Tucker in the spectral norm: upper bounds for free, lower bounds per cut</h2>
 
   <p><strong>Upper bounds are inherited.</strong> The greedy output has CP rank \(R < 1/\varepsilon^2\),
@@ -305,12 +401,12 @@
     is close to unavoidable.
   </div>
 
-  <div class="stepnav"><a class="prev" href="#sec-spec">← Spectral theorem</a><a class="next" href="#sec-verdict">Next: the verdict →</a></div>
+  <div class="stepnav"><a class="prev" href="#sec-cliff">← The cliff</a><a class="next" href="#sec-verdict">Next: the verdict →</a></div>
 </section>
 
 <!-- ============================================================= -->
 <section id="sec-verdict" class="step">
-  <div class="step-tag">Part 5 of 5</div>
+  <div class="step-tag">Part 6 of 6</div>
   <h2>The verdict: which format, when, and under which condition</h2>
 
   <div class="widget" id="w-shootout">
@@ -403,7 +499,10 @@
 <footer>
   <p>Part of the <a href="index.html">nn-tensor interactive tutorial</a> (companion to
   <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">arXiv:2508.18408</a>);
-  see also the <a href="depth.html">depth-separation deep dive</a>.
+  see also the <a href="depth.html">depth-separation deep dive</a>, the
+  <a href="gaussian.html">Gaussian-noise deep dive</a>, and the
+  <a href="angle.html">angular-error deep dive</a> (a third notion of approximation error —
+  worst-case output <em>angle</em> — under which every low-rank approximation fails maximally).
   Key references: C. Eckart, G. Young 1936; A. Frieze, R. Kannan, <em>Quick approximation to
   matrices and applications</em>, Combinatorica 1999 (energy decrement / weak regularity);
   V. de Silva, L.-H. Lim, SIMAX 2008 (ill-posedness of best CP approximation); C. Hillar, L.-H. Lim,

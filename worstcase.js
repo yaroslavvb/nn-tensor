@@ -307,7 +307,7 @@ function subtractRank1(T, tab, U, lambda) {
 })();
 
 /* ============================================================
-   PART 4 — the per-cut adversary (w-adversary)
+   PART 5 — the per-cut adversary (w-adversary)
    ============================================================ */
 (function adversary() {
   const d = 6;
@@ -376,7 +376,7 @@ function subtractRank1(T, tab, U, lambda) {
 })();
 
 /* ============================================================
-   PART 5 — format shootout (w-shootout)
+   PART 6 — format shootout (w-shootout)
    ============================================================ */
 (function shootout() {
   const sN = document.getElementById("sh-n"), sD = document.getElementById("sh-d");
@@ -427,6 +427,61 @@ function subtractRank1(T, tab, U, lambda) {
       `The per-cut lower bounds hold while 1/(2ε²) ≤ n = ${n}, i.e. ε ≥ ${(1 / Math.sqrt(2 * n)).toFixed(2)}. ` +
       `At very coarse ε, Tucker's still-small core can transiently undercut dense TT — asymptotically the ` +
       `exponents 2 &lt; 4 &lt; 2d decide. Curves cap at n<sup>d</sup> (storing 𝒯 outright).`;
+  }
+  [sN, sD].forEach(s => s.addEventListener("input", update));
+  update();
+  onSchemeChange(update);
+})();
+
+/* ============================================================
+   PART 4 — anatomy of the cliff (w-cliff), log–log
+   ============================================================ */
+(function cliff() {
+  const sN = document.getElementById("cl-n"), sD = document.getElementById("cl-d");
+  const oN = document.getElementById("cl-n-out"), oD = document.getElementById("cl-d-out");
+  const chartEl = document.getElementById("cliff-chart");
+  const noteEl = document.getElementById("cliff-note");
+  function update() {
+    const n = +sN.value, d = +sD.value;
+    oN.textContent = n; oD.textContent = d;
+    const E = d * Math.log10(n);                       // log10 N
+    const N = Math.pow(n, d);
+    const floorExp = 0.5 * Math.log10(d * n) - (d / 2) * Math.log10(n);   // log10 of √(dn)/n^{d/2}
+    const yMin = Math.floor((floorExp - 0.8) * 10) / 10, yMax = 0.15;
+    const M = 60;
+    const xs = Array.from({ length: M + 1 }, (_, i) => (i / M) * E);
+    const greedy = xs.map(e => Math.min(0, 0.5 * (Math.log10(d * n) - e)));
+    const floorYs = xs.map(() => floorExp);
+    const froVal = xs.map(e => Math.sqrt(Math.max(0, 1 - Math.pow(10, e) / N)));
+    const fro = froVal.map(v => (v <= Math.pow(10, yMin) ? yMin : Math.log10(v)));
+    const xTicks = [], yTicks = [];
+    for (let k = 0; k <= Math.floor(E); k += Math.ceil(E / 8)) xTicks.push({ v: k, label: `10${supStr(k)}` });
+    for (let k = 0; k >= Math.ceil(yMin); k--) yTicks.push({ v: k, label: k === 0 ? "1" : `10${supStr(k)}` });
+    lineChart(chartEl, {
+      xs, yMin, yMax,
+      label: "Log-log anatomy of the spectral-norm cliff: greedy bound, floor, and the wall at P equals n to the d, all meeting in one point",
+      series: [
+        { name: "L² (Frobenius)", color: cssVar("--accent-2"), ys: fro, noDots: true, labelAt: "start" },
+        { name: "floor", color: cssVar("--accent-3"), ys: floorYs, dashed: true, noDots: true, labelAt: "start" },
+        { name: "spectral", color: cssVar("--accent"), ys: greedy, noDots: true }
+      ],
+      yTicks, xTicks,
+      marker: E,
+      xLabel: "parameters P (log scale) — dashed vertical line: P = nᵈ = N",
+      tooltip: (x, i) => {
+        const P = Math.pow(10, x);
+        return `<b>P ≈ ${fmtCount(Math.round(P))}</b>` +
+          `<br>spectral bound: ${fmtSci(Math.pow(10, greedy[i]))}` +
+          `<br>L²: ${froVal[i] <= Math.pow(10, yMin) ? "0 (exact)" : fmtSci(froVal[i])}` +
+          `<br>floor: ${fmtSci(Math.pow(10, floorExp))}`;
+      }
+    });
+    const floorVal = Math.pow(10, floorExp);
+    const Rstar = Math.round(N / (d * n));
+    noteEl.innerHTML = `At n=${n}, d=${d}: N = ${fmtCount(N)}; floor ≈ ${fmtSci(floorVal)}; ` +
+      `left kink at P = dn = ${fmtCount(d * n)}. The greedy line meets the floor exactly at P = N, ` +
+      `i.e. at rank R = N/(dn) = ${fmtCount(Rstar)} — the generic-rank scale where exact representation takes over. ` +
+      `Even reaching 2×floor already costs P = N/4 = ${fmtCount(Math.round(N / 4))}: the endgame is where all the money goes.`;
   }
   [sN, sD].forEach(s => s.addEventListener("input", update));
   update();

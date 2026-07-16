@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The 90° Wall: Measuring Approximation Error by Angle</title>
+<meta name="description" content="Worst-case angle between Ax and Bx as an approximation metric: operator angles and antieigenvalues, the sharp arcsin bound, why every low-rank approximation of an invertible matrix hits 90°, and what controls angles instead.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand"><a href="index.html" style="text-decoration:none;color:inherit">🧊 nn-tensor</a> <span style="color:var(--muted);font-weight:400">/ angle</span></span>
+    <div class="nav-links" id="navlinks">
+      <a href="#sec-metric">Metric</a>
+      <a href="#sec-bound">Bound</a>
+      <a href="#sec-wall">The wall</a>
+      <a href="#sec-escape">Escapes</a>
+      <a href="#sec-verdict">Verdict</a>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
+</nav>
+
+<header class="hero">
+  <h1>The 90° Wall: <em>Measuring Approximation Error by Angle</em></h1>
+  <p class="hero-sub">Norms ask <em>how far</em> \(Bx\) is from \(Ax\). Suppose you instead care
+  <strong>whether \(Bx\) points the way \(Ax\) points</strong> — the worst-case angle
+  \(\Theta(A,B) = \sup_x \angle(Ax, Bx)\) over all inputs. This metric has a name (it is the
+  <em>operator angle</em> of the relative operator \(BA^{-1}\), the arccos of an
+  <em>antieigenvalue</em>), it has exactly one general bound (an arcsine of the <em>relative</em>
+  error), and it has a brutal no-go: <strong>every low-rank approximation of an invertible matrix
+  is 90° wrong somewhere</strong> — the angular Eckart–Young theorem exists and is degenerate.
+  Every curve below is computed live in your browser.</p>
+  <p class="hero-cite">Part of the <a href="index.html">nn-tensor interactive tutorial</a>
+  (companion to the <a href="gaussian.html">Gaussian-noise deep dive</a>, whose error curves
+  return here wearing angular clothes). Background: Kantorovich 1948 (the inequality behind the
+  exact SPD angle); Wielandt; Gustafson 1968– (antieigenvalues, "operator trigonometry");
+  Davis–Kahan 1970 (the other sin&thinsp;Θ theorem — for subspaces); Edelman 1988
+  (\(\kappa \sim n\) for Gaussian matrices).</p>
+  <a class="hero-start" href="#sec-metric">Start ↓</a>
+</header>
+
+<main>
+
+<!-- ============================================================= -->
+<section id="sec-metric" class="step">
+  <div class="step-tag">Part 1 of 5</div>
+  <h2>The metric: worst-case output angle</h2>
+
+  <p>For \(A, B \in \mathbb R^{m\times n}\), define the <strong>worst-case angular error</strong></p>
+  <div class="eq">$$\Theta(A,B) \;=\; \sup_{\substack{x \ne 0 \\ Ax \ne 0,\; Bx \ne 0}}
+  \angle(Ax, Bx), \qquad
+  \angle(u,v) = \arccos\frac{u^{\mathsf T} v}{\lVert u\rVert\,\lVert v\rVert} \in [0, \pi].$$</div>
+  <p>If \(A\) is invertible, substitute \(y = Ax\): the two-matrix problem collapses to a
+  one-operator problem,</p>
+  <div class="eq">$$\Theta(A,B) \;=\; \sup_{y \ne 0}\; \angle(y,\, Cy), \qquad C = BA^{-1},$$</div>
+  <p>— how far the <em>relative operator</em> \(C\) turns vectors. This quantity is the
+  <strong>operator angle</strong> (also "singular angle", "maximal turning angle") of \(C\); its
+  cosine, \(\inf_y \langle y, Cy\rangle / \lVert y\rVert\lVert Cy\rVert\), is the first
+  <strong>antieigenvalue</strong> in Gustafson's operator trigonometry (for two matrices, an
+  <em>interaction antieigenvalue</em>). The terminology is not fully standardized — the concept
+  is.</p>
+  <p>Two things to internalize before bounding it. First, \(\Theta\) is <strong>not a
+  norm</strong> and cannot be expressed through \(\lVert A - B\rVert\) alone:
+  \(\Theta(A, 100A) = 0\) while \(\lVert A - 100A\rVert\) is huge — angle sees direction, not
+  gain. Second, if the <em>sign</em> of the output is also irrelevant, use the projective variant
+  \(\Theta_{\mathrm{proj}}\) with \(\lvert\cos\rvert\) in the definition; it measures output
+  <em>lines</em> and satisfies \(\sin \Theta_{\mathrm{proj}} = \sup_x \lVert P_{Ax} -
+  P_{Bx}\rVert_2\), the worst-case gap between the rank-one output projectors.</p>
+
+  <div class="widget" id="w-sweep">
+    <div class="widget-head">
+      <h3>Angle vs input direction, and why no norm can see it</h3>
+      <p>A fixed \(2\times2\) matrix \(A\), an approximation \(B = \alpha\,(A + \varepsilon E)\):
+      the curve is \(\angle(Ax, Bx)\) as the input direction sweeps a half-circle. Drag
+      \(\varepsilon\) to inject genuine directional error. Then drag the <em>scale</em>
+      \(\alpha\): \(\lVert A - B\rVert_2\) changes wildly, the angle curve does not move a
+      pixel.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">perturbation ε <input type="range" id="sw-eps" min="0" max="1.2" step="0.02" value="0.35"><output id="sw-eps-out">0.35</output></label>
+      <label class="slider-ctl">scale α <input type="range" id="sw-scale" min="-0.6" max="0.6" step="0.05" value="0"><output id="sw-scale-out">1.0</output></label>
+      <button class="btn" id="sw-newE">🎲 new perturbation direction</button>
+    </div>
+    <div id="sweep-chart"></div>
+    <div class="cpd-grid" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="stat-tile slim">
+        <div class="stat-label">worst angle over x</div>
+        <div class="stat-value" id="sw-worst">—</div>
+      </div>
+      <div class="stat-tile slim">
+        <div class="stat-label">‖A − B‖₂</div>
+        <div class="stat-value" id="sw-norm">—</div>
+      </div>
+      <div class="stat-tile slim">
+        <div class="stat-label">arcsin bound (Part 2)</div>
+        <div class="stat-value" id="sw-bound">—</div>
+      </div>
+    </div>
+    <div class="readout" id="sw-note"></div>
+  </div>
+
+  <div class="callout note">
+    <strong>What the metric sees.</strong> \(\Theta\) is blind to any positive rescaling of
+    \(B\) (or of \(A\)) — it measures the <em>direction field</em> \(x \mapsto Bx/\lVert Bx\rVert\)
+    against \(x \mapsto Ax/\lVert Ax\rVert\) and nothing else. That makes it the right error for
+    "does the approximation send inputs the right way" questions (classifiers before the softmax,
+    matched filters, preconditioned directions) and the wrong error whenever magnitudes matter.
+  </div>
+
+  <div class="stepnav"><span></span><a class="next" href="#sec-bound">Next: the arcsin bound →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-bound" class="step">
+  <div class="step-tag">Part 2 of 5</div>
+  <h2>The one general bound: arcsin of the <em>relative</em> error</h2>
+
+  <p>Write \(E = B - A\), so \(Bx = Ax + Ex\). If the perturbation is uniformly small
+  <em>relative to the output it perturbs</em>,</p>
+  <div class="eq">$$\eta \;=\; \sup_{x\ne 0} \frac{\lVert Ex\rVert}{\lVert Ax\rVert}
+  \;=\; \lVert (B-A)A^{-1}\rVert_2 \;\lt\; 1,$$</div>
+  <p>then \(Bx\) lives in a ball of radius \(\eta\lVert Ax\rVert\) around \(Ax\), and the worst
+  direction in that ball is the tangent ray:</p>
+  <div class="eq">$$\boxed{\;\Theta(A,B) \;\le\; \arcsin \eta\;}$$</div>
+  <p>and the bound is <strong>sharp</strong> — equality holds the moment some \(Ex\) of maximal
+  relative size is orthogonal to \(Ax\). Weakening \(\eta\) through
+  \(\lVert EA^{-1}\rVert_2 \le \lVert E\rVert_2 / \sigma_{\min}(A)\) gives the conventional
+  chain</p>
+  <div class="eq">$$\Theta(A,B) \;\le\; \arcsin\frac{\lVert A-B\rVert_2}{\sigma_{\min}(A)}
+  \;=\; \arcsin\Big(\kappa_2(A)\cdot\frac{\lVert A-B\rVert_2}{\lVert A\rVert_2}\Big),$$</div>
+  <p>and since angles ignore scale, you may optimize the free scalar first:
+  \(\Theta \le \arcsin\big(\inf_{\alpha&gt;0}\lVert \alpha BA^{-1} - I\rVert_2\big)\) — that is
+  the dashed line the Part 1 widget draws. The lesson sits in the \(\kappa\): <strong>angular
+  accuracy is a relative, condition-number-sensitive requirement</strong>. The classic
+  two-line disaster:</p>
+  <div class="eq">$$A = \begin{pmatrix}1 &amp; 0\\ 0 &amp; \epsilon\end{pmatrix}, \quad
+  B = \begin{pmatrix}1 &amp; 0\\ 0 &amp; 0\end{pmatrix}:\qquad
+  \lVert A - B\rVert_2 = \epsilon \to 0, \quad\text{yet}\quad
+  \Theta(A,B) = 90^\circ \;\;\text{(the direction } e_2 \text{ is annihilated).}$$</div>
+
+  <div class="widget" id="w-ball">
+    <div class="widget-head">
+      <h3>The tangent-ball picture</h3>
+      <p>Everything about the bound in one drawing: \(Bx\) is confined to the ball of radius
+      \(\eta\lVert Ax\rVert\) at the tip of \(Ax\); the extreme direction is the tangent from the
+      origin, at angle \(\arcsin\eta\). Drag \(\eta\) past \(1\) and the ball swallows the origin
+      — the cone becomes the whole plane and <em>no</em> angular guarantee survives.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">relative error η <input type="range" id="ball-eta" min="0" max="1.1" step="0.01" value="0.5"><output id="ball-eta-out">0.50</output></label>
+    </div>
+    <div id="ball-svg"></div>
+    <div class="readout" id="ball-note"></div>
+    <div class="mini-calc">
+      <label>to guarantee worst angle ≤ <input type="range" id="mc-theta" min="0.5" max="45" step="0.5" value="5" style="max-width:130px"><output id="mc-theta-out">5°</output>
+      &nbsp;when κ₂(A) = <input type="range" id="mc-kappa" min="0" max="4" step="0.05" value="2" style="max-width:130px"><output id="mc-kappa-out">100</output></label>
+      <div class="mini-calc-result" id="mc-out"></div>
+    </div>
+  </div>
+
+  <div class="callout minus">
+    <strong>Why this is expensive.</strong> The bound needs the error small against
+    \(\sigma_{\min}(A)\), the <em>weakest</em> output of \(A\) — precisely the part every norm-based
+    approximation is happiest to throw away. For an \(n\times n\) Gaussian matrix
+    \(\kappa_2 \sim n\) (Edelman), so a uniform \(5^\circ\) guarantee needs relative spectral
+    error \(\lesssim 0.087/n\) — not "a few percent", but "a few percent <em>of \(1/n\)</em>".
+    And no low-rank \(B\) can ever reach \(\eta \lt 1\): on \(\ker B\) the ratio
+    \(\lVert Ex\rVert/\lVert Ax\rVert\) equals \(1\) exactly. That observation becomes a theorem
+    next.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-metric">← Metric</a><a class="next" href="#sec-wall">Next: the 90° wall →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-wall" class="step">
+  <div class="step-tag">Part 3 of 5</div>
+  <h2>Low rank hits the wall: Eckart–Young degenerates at 90°</h2>
+
+  <p>Try the best candidate first. For the rank-\(r\) truncated SVD \(A_r\), the kept and
+  discarded parts are <em>orthogonal for every input</em>: \(Ax = A_r x + A_{\perp}x\) with
+  \(A_r x \perp A_\perp x\). The angle comes out in closed form — in singular coordinates
+  \(c_j = v_j^{\mathsf T}x\),</p>
+  <div class="eq">$$\tan \angle(Ax, A_r x) = \frac{\lVert A_\perp x\rVert}{\lVert A_r x\rVert}
+  = \Bigg(\frac{\sum_{j&gt;r}\sigma_j^2 c_j^2}{\sum_{j\le r}\sigma_j^2 c_j^2}\Bigg)^{1/2},
+  \qquad\text{equivalently}\qquad
+  \sin \angle(Ax, A_r x) = \frac{\lVert (A - A_r)x\rVert}{\lVert Ax\rVert},$$</div>
+  <p>so for the truncated SVD the angle at \(x\) is <em>exactly</em> the arcsine of the pointwise
+  relative error — Part 2's bound holds with equality everywhere. Now feed it the adversarial
+  input \(x_\varepsilon = v_{r+1} + \varepsilon v_1\): almost all of it lies in the discarded
+  subspace, with an \(\varepsilon\)-whisker of signal to keep \(A_r x \neq 0\). Then</p>
+  <div class="eq">$$\angle(Ax_\varepsilon, A_r x_\varepsilon)
+  = \arctan\frac{\sigma_{r+1}}{\varepsilon\,\sigma_1} \;\longrightarrow\; 90^\circ
+  \quad (\varepsilon \to 0).$$</div>
+  <p>So \(\Theta(A, A_r) = 90^\circ\) for <em>every</em> \(r \lt \operatorname{rank} A\). And no
+  cleverer \(B\) escapes: any \(B\) with \(\operatorname{rank} B \le r \lt n\) has a nontrivial
+  kernel; walk \(x = x_0 + \delta z\) with \(x_0 \in \ker B\), and as \(\delta \to 0\) the output
+  \(Bx = \delta Bz\) points anywhere in \(\operatorname{range} B\) while \(Ax \to Ax_0 \neq 0\) —
+  flipping \(z \mapsto -z\) forces an angle \(\ge 90^\circ\). Hence the <strong>angular
+  Eckart–Young theorem</strong>, in degenerate form:</p>
+  <div class="eq">$$\inf_{\operatorname{rank} B \le r} \Theta(A,B) \;=\; \frac{\pi}{2}
+  \qquad\text{for every } 1 \le r \lt n,\; A \text{ invertible.}$$</div>
+  <p>The truncated SVD attains the optimum — and the optimum says <em>maximally wrong somewhere</em>.
+  (Its one virtue: \(\langle Ax, A_r x\rangle = \lVert A_r x\rVert^2 \ge 0\), so it is never
+  <em>obtuse</em>; a careless low-rank \(B\) can exceed \(90^\circ\).) The wall is a worst-case
+  statement, though. For a <em>random</em> unit input, \(c_j^2 \approx 1/n\) concentrates and the
+  tan-formula turns into the tail-to-head energy ratio:</p>
+  <div class="eq">$$\sin \angle(Ax, A_r x) \;\approx\; \mathcal E_F(r)
+  \qquad\text{— the typical angle is the arcsine of the relative Frobenius error,}$$</div>
+  <p>i.e. the quarter-circle curve from the <a href="gaussian.html">Gaussian page</a>, read
+  through an arcsine.</p>
+
+  <div class="widget" id="w-wall">
+    <div class="widget-head">
+      <h3>The wall vs the crowd, live on a Gaussian matrix</h3>
+      <p>Singular values of a fresh \(100\times100\) Gaussian sample drive both curves. The
+      adversarial input \(v_{r+1} + \varepsilon v_1\) gives
+      \(\arctan(\sigma_{r+1}/\varepsilon\sigma_1)\) — drag \(\varepsilon\) toward zero and watch
+      it flatten into the 90° wall at <em>every</em> rank. Random inputs (median of 400 samples)
+      instead track \(\arcsin \mathcal E_F(r)\) (dashed): the Frobenius error curve in angular
+      disguise.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">adversarial ε = 10^<input type="range" id="wall-eps" min="-4" max="0" step="0.25" value="-2"><output id="wall-eps-out">10⁻²</output></label>
+      <button class="btn" id="wall-resample">🎲 resample A</button>
+    </div>
+    <div id="wall-chart"></div>
+    <div class="readout" id="wall-note"></div>
+  </div>
+
+  <div class="callout note">
+    <strong>How big is "somewhere"?</strong> The near-90° inputs occupy a thin sliver — vectors
+    within \(\sim\varepsilon\) of the discarded subspace — and random sampling essentially never
+    finds them (the widget's median curve is oblivious). But "rare under the uniform measure" is
+    not "ignorable": optimizers, adversarial attacks, feedback loops, and iterative solvers all
+    concentrate mass exactly where an approximation is weakest. Worst-case metrics exist because
+    inputs are not always random.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-bound">← Bound</a><a class="next" href="#sec-escape">Next: escape routes →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-escape" class="step">
+  <div class="step-tag">Part 4 of 5</div>
+  <h2>Escape routes: what actually controls angles</h2>
+
+  <p><strong>Route 1 — restrict the inputs.</strong> The wall is built from inputs that hide in
+  the discarded subspace, so promise they can't: require every admissible unit input to keep
+  mass \(\lVert P_r x\rVert \ge \gamma\) in the retained right-singular subspace. Then
+  \(\lVert A_r x\rVert \ge \sigma_r \gamma\) and
+  \(\lVert A_\perp x\rVert \le \sigma_{r+1}\sqrt{1-\gamma^2}\), so</p>
+  <div class="eq">$$\Theta_{\mathcal S}(A, A_r) \;\le\;
+  \arctan\Big[\frac{\sigma_{r+1}}{\sigma_r}\cdot\frac{\sqrt{1-\gamma^2}}{\gamma}\Big].$$</div>
+  <p>The bound factors into what <em>you</em> promise (\(\gamma\)) and what the <em>matrix</em>
+  offers (the gap ratio \(\sigma_{r+1}/\sigma_r\)). For noise the matrix offers nothing — the
+  spectrum is gapless, \(\sigma_{r+1}/\sigma_r \approx 1\), and the bound collapses to
+  \(\arccos\gamma\): you get out exactly the concentration you put in. A genuine spectral gap is
+  the only thing that beats your promise:</p>
+
+  <div class="widget" id="w-restricted">
+    <div class="widget-head">
+      <h3>The restricted-input bound: promise vs gap</h3>
+      <p>The guaranteed angle \(\arctan[(\sigma_{r+1}/\sigma_r)\sqrt{1-\gamma^2}/\gamma]\) at
+      every rank, on the live Gaussian sample from Part 3. Toggle in a planted rank-20 signal
+      (top 20 singular values × 8) and watch the bound crater exactly at \(r=20\) — a spectral
+      gap converts input concentration into angular accuracy at a discount.</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="rest-mode" role="group" aria-label="spectrum">
+        <button data-mode="noise" class="on" aria-pressed="true">pure noise</button>
+        <button data-mode="signal" aria-pressed="false">noise + rank-20 signal ×8</button>
+      </div>
+      <label class="slider-ctl">input concentration γ <input type="range" id="rest-gamma" min="0.10" max="0.99" step="0.01" value="0.70"><output id="rest-gamma-out">0.70</output></label>
+    </div>
+    <div id="rest-chart"></div>
+    <div class="readout" id="rest-note"></div>
+  </div>
+
+  <p><strong>Route 2 — keep full rank and condition the <em>relative</em> operator.</strong>
+  Angles are multiplicative, so the right target is not \(B \approx A\) but
+  \(C = BA^{-1} \approx\) (a positive multiple of) \(I\). In the cleanest case — \(C\) symmetric
+  positive definite with eigenvalues in \([m, M]\) — the worst angle is known <em>exactly</em>
+  (Kantorovich's inequality, Gustafson's first antieigenvalue):</p>
+  <div class="eq">$$\cos\Theta = \frac{2\sqrt{mM}}{m+M}, \qquad
+  \boxed{\;\sin\Theta = \frac{M-m}{M+m} = \frac{\kappa_2(C) - 1}{\kappa_2(C) + 1}\;}$$</div>
+  <p>Note what is <em>absent</em>: any closeness of \(B\) to \(A\). \(B\) may be numerically far
+  away — it must only distort \(A\)'s output directions by nearly the same relative factor in
+  every direction. This is precisely the preconditioning philosophy: a good preconditioner
+  \(M^{-1}\) makes \(\kappa(M^{-1}A) \approx 1\), i.e. makes the relative operator turn nothing.</p>
+
+  <div class="widget" id="w-kappa">
+    <div class="widget-head">
+      <h3>Exact angle from relative conditioning</h3>
+      <p>The full-rank trade: how well-conditioned must the relative operator \(BA^{-1}\) be
+      (SPD case) for a given worst-case angle?</p>
+    </div>
+    <div class="mini-calc">
+      <label>κ₂(BA⁻¹) = <input type="range" id="kap-slider" min="0" max="3" step="0.02" value="0.7" style="max-width:220px"><output id="kap-out-k">5.0</output></label>
+      <div class="mini-calc-result" id="kap-out"></div>
+    </div>
+  </div>
+
+  <p><strong>Route 3 — change the question.</strong> If your inputs genuinely are generic,
+  Part 3 already gave the answer: the typical angle is \(\arcsin\mathcal E_F(r)\), a perfectly
+  tame, rank-responsive quantity. Worst-case angle is the wrong metric for average-case
+  pipelines — just say so explicitly, and use the Frobenius curve.</p>
+
+  <div class="callout plus">
+    <strong>The three knobs.</strong> (1)&nbsp;Restrict inputs: concentration \(\gamma\) in the
+    kept subspace buys \(\arctan[(\sigma_{r+1}/\sigma_r)\sqrt{1-\gamma^2}/\gamma]\) — your promise
+    times the matrix's gap. (2)&nbsp;Keep full rank: conditioning of \(BA^{-1}\) buys
+    \(\arcsin\frac{\kappa-1}{\kappa+1}\), no closeness to \(A\) required. (3)&nbsp;Go typical-case:
+    random inputs see \(\arcsin\mathcal E_F(r)\). What does <em>not</em> work: any amount of
+    additive norm accuracy above \(\sigma_{\min}\), and any low-rank \(B\) on unrestricted inputs.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-wall">← The wall</a><a class="next" href="#sec-verdict">Next: verdict →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-verdict" class="step">
+  <div class="step-tag">Part 5 of 5</div>
+  <h2>The verdict: angle is a multiplicative metric in an additive world</h2>
+
+  <p>Three ways to read this page. <strong>As geometry:</strong> norm approximation controls
+  \(B - A\); angular approximation controls \(BA^{-1} - I\). The first is additive and blind to
+  \(A\)'s weak directions; the second is multiplicative and weights every direction of \(A\)
+  equally — including \(\sigma_{\min}\)-scale outputs that additive metrics happily sacrifice.
+  <strong>As an impossibility theorem:</strong> rank deficiency <em>is</em> a kernel, a kernel
+  <em>is</em> a direction whose output can point anywhere, so worst-case angle and low-rank
+  approximation are simply incompatible — the angular Eckart–Young optimum exists and equals
+  \(90^\circ\) at every deficient rank. <strong>As practical advice:</strong> compressing a layer
+  or an operator by truncated SVD is safe for <em>typical</em> directions
+  (\(\arcsin\mathcal E_F\), smoothly decaying in rank) and unsafe against any process that can
+  seek out the discarded subspace; if directions must be preserved uniformly, the budget question
+  is not "how many singular values" but "how well can I condition \(BA^{-1}\)".</p>
+
+  <div class="callout plus">
+    <strong>TL;DR.</strong> Worst-case output angle \(\Theta(A,B) = \sup_x \angle(Ax,Bx)\) is the
+    operator angle of \(BA^{-1}\) (arccos of an antieigenvalue), not a function of any norm of
+    \(A-B\). The sharp general bound is \(\Theta \le \arcsin\lVert(B-A)A^{-1}\rVert_2 \le
+    \arcsin(\kappa_2(A)\,\lVert A-B\rVert_2/\lVert A\rVert_2)\) — angular accuracy is relative
+    accuracy. Low rank fails it maximally: \(\inf_{\operatorname{rank}\le r}\Theta = 90^\circ\)
+    for every \(r \lt n\), attained by the truncated SVD via inputs
+    \(v_{r+1} + \varepsilon v_1\). Typical inputs instead see
+    \(\arcsin\mathcal E_F(r)\); restricted inputs see
+    \(\arctan[(\sigma_{r+1}/\sigma_r)\sqrt{1-\gamma^2}/\gamma]\); and a full-rank SPD relative
+    operator sees exactly \(\arcsin\frac{\kappa-1}{\kappa+1}\). Rank buys norms; only
+    conditioning buys angles.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-escape">← Escapes</a><a class="next" href="index.html">Back to the main tutorial →</a></div>
+</section>
+
+</main>
+
+<footer>
+  <p>Part of the <a href="index.html">nn-tensor interactive tutorial</a> (companion to
+  <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">arXiv:2508.18408</a>);
+  see also the <a href="gaussian.html">Gaussian-noise deep dive</a>, the
+  <a href="worstcase.html">worst-case approximation report</a>, and the
+  <a href="depth.html">depth-separation deep dive</a>.
+  Key references: L. Kantorovich 1948 (the inequality giving the exact SPD angle);
+  H. Wielandt (inclusion of the operator angle in perturbation theory); K. Gustafson 1968
+  onward (antieigenvalues and operator trigonometry; see <em>Antieigenvalue Analysis</em>, 2012);
+  C. Davis, W. Kahan 1970 (the sin&thinsp;Θ theorem for invariant subspaces — a cousin: angles
+  between <em>subspaces</em> under perturbation, where ours is angles between <em>outputs</em>);
+  A. Edelman 1988 (\(\kappa_2 \sim n\) for Gaussian matrices). The kernel argument, tangent-ball
+  bound, and restricted-input bound are elementary and proved in the text. All numerics run in
+  vanilla JS; only KaTeX loads from a CDN. Built with Claude.</p>
+</footer>
+
+<script src="lib.js"></script>
+<script src="angle.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>
