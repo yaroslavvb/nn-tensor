@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why CP Rank Explodes — a deep dive</title>
+<meta name="description" content="An interactive proof-walkthrough of why the CP rank of a tensor is exponentially larger than its TT/HT rank — the tensor-algebra theorem behind 'deep networks beat shallow ones'.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand"><a href="index.html" style="text-decoration:none;color:inherit">🧊 nn-tensor</a> <span style="color:var(--muted);font-weight:400">/ deep dive</span></span>
+    <div class="nav-links" id="navlinks">
+      <a href="#sec-claim">Claim</a>
+      <a href="#sec-unfold">Unfoldings</a>
+      <a href="#sec-cuts">TT cuts</a>
+      <a href="#sec-links">The chain</a>
+      <a href="#sec-als">Experiment</a>
+      <a href="#sec-theorem">Theorem</a>
+      <a href="#sec-nn">Neural nets</a>
+      <a href="#sec-quiz2">Quiz</a>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
+</nav>
+
+<header class="hero">
+  <h1>Why CP Rank <em>Explodes</em></h1>
+  <p class="hero-sub">A generic tensor with tiny Tensor-Train (or Hierarchical-Tucker) ranks has
+  <strong>exponentially large CP rank</strong>. This page walks through the entire argument —
+  one tool, one worked example, one theorem — with every rank computed live in your browser.
+  It is the tensor-algebra fact behind “deep sum-product networks are exponentially more
+  efficient than shallow ones.”</p>
+  <p class="hero-cite">A companion deep dive to the
+  <a href="index.html">interactive tensor-decompositions tutorial</a>, based on
+  <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">arXiv:2508.18408</a>
+  (Sec. II-D &amp; V-B) and the depth-separation results of Cohen–Sharir–Shashua (COLT 2016) and
+  Khrulkov–Novikov–Oseledets (ICLR 2018) cited there.</p>
+  <a class="hero-start" href="#sec-claim">Start ↓</a>
+</header>
+
+<main>
+
+<!-- ============================================================= -->
+<section id="sec-claim" class="step">
+  <div class="step-tag">Part 1 of 8</div>
+  <h2>The claim, precisely</h2>
+
+  <p>Recall the two formats (details in the <a href="index.html">main tutorial</a>). The
+  <strong>CP rank</strong> of an order-\(d\) tensor is the smallest \(R\) with</p>
+  <div class="eq">$$\mathcal T \;=\; \sum_{r=1}^{R} \boldsymbol a_r^{(1)}\otimes \boldsymbol a_r^{(2)}\otimes\cdots\otimes \boldsymbol a_r^{(d)},$$</div>
+  <p>and the <strong>TT (tensor-train) ranks</strong> \((r_1,\dots,r_{d-1})\) are the smallest bond
+  dimensions for which \(\mathcal T\) is a chain of small cores. Two facts, in opposite directions:</p>
+
+  <div class="two-col">
+    <div class="callout plus">
+      <strong>Cheap direction.</strong> Every TT rank is at most the CP rank:
+      \(r_k \le \operatorname{rank}_{\mathrm{CP}}(\mathcal T)\) for all \(k\).
+      A deep format can always absorb a shallow one with no blow-up.
+      (Proved in Part 3 — it is a one-liner once we have the tool.)
+    </div>
+    <div class="callout minus">
+      <strong>Exponential direction.</strong> For <em>almost every</em> tensor with mode sizes
+      \(\ge r\) whose TT (or HT) ranks are bounded by \(r\), the CP rank is at least
+      \(r^{\lfloor d/2\rfloor}\) — exponential in the order \(d\). Small-TT does <em>not</em> imply
+      small-CP; it fails as badly as it possibly could.
+    </div>
+  </div>
+
+  <p>The whole argument fits in four moves, and each one is interactive below:</p>
+  <ol>
+    <li><strong>One tool</strong>: matricization ranks lower-bound CP rank — for <em>every</em> way of
+    splitting the modes into two groups (Part 2).</li>
+    <li><strong>What TT controls</strong>: TT ranks are exactly the ranks of the \(d-1\)
+    <em>contiguous</em> splits — a vanishing fraction of all \(2^{d-1}-1\) splits (Part 3).</li>
+    <li><strong>A worked example</strong>: the “chain of links” tensor — \(d\) links, order \(2d\) —
+    TT ranks \(\le 2\), yet one <em>crossing</em> split is a giant identity matrix, forcing CP rank
+    \(2^{d} = 2^{\mathrm{order}/2}\) (Parts 4–5).</li>
+    <li><strong>The theorem</strong>: generically, the same crossing split is as large as it can be,
+    giving the \(r^{\lfloor d/2\rfloor}\) bound (Part 6). Then we translate it back to neural networks (Part 7).</li>
+  </ol>
+
+  <div class="stepnav"><span></span><a class="next" href="#sec-unfold">Next: the one tool →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-unfold" class="step">
+  <div class="step-tag">Part 2 of 8</div>
+  <h2>The one tool: bipartition unfoldings</h2>
+
+  <p>Pick any subset \(S\subseteq\{1,\dots,d\}\) of the modes. Grouping the indices in \(S\) into a
+  row index and the rest into a column index flattens \(\mathcal T\) into the
+  <strong>unfolding matrix</strong></p>
+  <div class="eq">$$\mathcal T_{\langle S\rangle}\;\in\;
+  \mathbb R^{\left(\prod_{k\in S} n_k\right)\times\left(\prod_{k\notin S} n_k\right)} ,$$</div>
+  <p>with the same entries, just reshaped. Nothing is lost — only regrouped.
+  Now watch what reshaping does to a rank-1 tensor:</p>
+  <div class="eq">$$\bigl(\boldsymbol a^{(1)}\otimes\cdots\otimes \boldsymbol a^{(d)}\bigr)_{\langle S\rangle}
+  \;=\;\Bigl(\textstyle\bigotimes_{k\in S} \boldsymbol a^{(k)}\Bigr)
+  \Bigl(\textstyle\bigotimes_{k\notin S} \boldsymbol a^{(k)}\Bigr)^{\!\top}.$$</div>
+  <p>The factors regroup into one long row-vector and one long column-vector — a
+  <strong>rank-1 matrix</strong>, no matter which \(S\) you chose. Summing \(R\) such terms gives a
+  matrix of rank at most \(R\). That is the entire proof of:</p>
+
+  <div class="callout note">
+    <strong>Lemma (the only tool we need).</strong> For every bipartition \(S\):
+    \(\ \operatorname{rank}\bigl(\mathcal T_{\langle S\rangle}\bigr)\;\le\;
+    \operatorname{rank}_{\mathrm{CP}}(\mathcal T)\).
+    In words: <em>a low-CP-rank tensor cannot have any high-rank unfolding — under any regrouping
+    whatsoever.</em> To prove CP rank is huge, exhibit one huge unfolding.
+  </div>
+
+  <div class="widget" id="w-bip">
+    <div class="widget-head">
+      <h3>All seven unfoldings, ranked live</h3>
+      <p>Two random \(2\times2\times2\times2\) tensors: one of CP rank 1, one of CP rank 3
+      (built from 1 and 3 random rank-1 terms). For each of the 7 bipartitions of the four modes,
+      this page builds the unfolding matrix and computes its rank numerically.</p>
+    </div>
+    <div class="table-wrap"><table class="cheat" id="bip-table">
+      <thead><tr><th>bipartition S | S̄</th><th>matrix shape</th><th>rank, CP-rank-1 tensor</th><th>rank, CP-rank-3 tensor</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="readout" id="bip-note"></div>
+  </div>
+
+  <p>Two things to notice. The rank-1 column is all 1s — rank-1 survives <em>every</em> regrouping.
+  And for the rank-3 tensor the singleton splits max out at 2 (a \(2\times 8\) matrix can’t exceed
+  rank 2), so the bound from those splits is weak: <strong>the strongest lower bound comes from the
+  most balanced splits</strong>. Keep that in mind — it is exactly where the exponent
+  \(\lfloor d/2\rfloor\) will come from.</p>
+
+  <div class="stepnav"><a class="prev" href="#sec-claim">← Claim</a><a class="next" href="#sec-cuts">Next: what TT controls →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-cuts" class="step">
+  <div class="step-tag">Part 3 of 8</div>
+  <h2>What TT controls: contiguous cuts only</h2>
+
+  <p>A TT decomposition writes each entry as a <em>product of small matrices</em> — one core per mode
+  (physicists call the same object a matrix-product state):</p>
+  <div class="eq">$$\mathcal T_{i_1,i_2,\dots,i_d} \;=\;
+  \underbrace{\boldsymbol G_1[i_1]}_{1\times r_1}\,
+  \underbrace{\boldsymbol G_2[i_2]}_{r_1\times r_2}\cdots
+  \underbrace{\boldsymbol G_d[i_d]}_{r_{d-1}\times 1}.$$</div>
+  <p>The fundamental fact about this format (it is what the TT-SVD algorithm computes) is:</p>
+  <div class="callout note">
+    <strong>TT ranks = contiguous-cut ranks.</strong> The minimal bond dimension \(r_k\) equals the
+    rank of the unfolding \(\mathcal T_{\langle\{1,\dots,k\}\rangle}\) — the split “first \(k\)
+    modes vs the rest.” So a tensor has small TT ranks <em>iff</em> all \(d-1\) contiguous
+    prefix cuts have small rank.
+  </div>
+  <p>Two immediate consequences:</p>
+  <ul>
+    <li><strong>The cheap direction of Part 1</strong>: contiguous cuts are bipartitions, so by the
+    Lemma every \(r_k \le \operatorname{rank}_{\mathrm{CP}}(\mathcal T)\). Deep absorbs shallow for free.</li>
+    <li><strong>The blind spot</strong>: TT constrains only \(d-1\) special bipartitions out of
+    \(2^{d-1}-1\). A <em>crossing</em> split — say odd modes vs even modes — severs every bond of the
+    chain at once, and nothing in the TT format keeps its rank small: chaining \(k\) crossed bonds can
+    multiply ranks up to \(r^{k}\).</li>
+  </ul>
+
+  <div class="widget" id="w-cut">
+    <div class="widget-head">
+      <h3>Probe a real TT tensor</h3>
+      <p>Below is a genuine order-6 tensor (mode size 2) built from random TT cores with all bond
+      dimensions equal to 2. Slide the cut to check every contiguous unfolding rank — then flip to
+      the crossing split and watch the same tensor produce a rank exponentially larger than any bond.</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="cut-mode" role="group" aria-label="split type">
+        <button data-m="cut" class="on" aria-pressed="true">contiguous cut</button>
+        <button data-m="cross" aria-pressed="false">crossing split (odd vs even)</button>
+      </div>
+      <label class="slider-ctl" id="cut-slider-wrap">cut after mode
+        <input type="range" id="cut-k" min="1" max="5" value="3">
+        <output id="cut-k-out">3</output>
+      </label>
+      <button class="btn" id="cut-reseed">↻ reseed the random cores</button>
+    </div>
+    <div id="cut-diagram"></div>
+    <div class="cpd-grid" style="grid-template-columns: 1fr 1fr">
+      <div class="stat-tile"><div class="stat-label">rank of this unfolding (computed live)</div>
+        <div class="stat-value" id="cut-rank">—</div><div class="stat-note" id="cut-note"></div></div>
+      <div class="stat-tile"><div class="stat-label">⇒ lower bound on CP rank (Lemma)</div>
+        <div class="stat-value" id="cut-bound">—</div><div class="stat-note" id="cut-bound-note"></div></div>
+    </div>
+  </div>
+
+  <p>That is the whole mechanism, in one picture: <em>this tensor’s TT ranks are all 2, yet its CP
+  rank is at least 8</em> — certified by a single unfolding that TT never promised to keep small.
+  The next two parts make the same phenomenon exact and quantitative on a tensor you can hold in
+  your head.</p>
+
+  <div class="stepnav"><a class="prev" href="#sec-unfold">← Unfoldings</a><a class="next" href="#sec-links">Next: the chain of links →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-links" class="step">
+  <div class="step-tag">Part 4 of 8</div>
+  <h2>The star witness: a chain of links</h2>
+
+  <p>Take \(d\) independent “links,” each a \(2\times 2\) identity matrix
+  \(\ \delta_{i,j} = \sum_{c=1}^{2} \boldsymbol e_c\otimes\boldsymbol e_c\), and lay them side by
+  side into an order-\(2d\) tensor with interleaved modes
+  \((i_1, j_1, i_2, j_2, \dots, i_d, j_d)\):</p>
+  <div class="eq">$$\mathcal L_d\,[i_1,j_1,\dots,i_d,j_d] \;=\;
+  \delta_{i_1 j_1}\,\delta_{i_2 j_2}\cdots\,\delta_{i_d j_d}
+  \;=\;\begin{cases}1 & \text{if } i_k=j_k \text{ for all } k\\[2pt] 0 & \text{otherwise.}\end{cases}$$</div>
+
+  <p>Because the links are independent, the rank of <em>any</em> unfolding factorizes link by link:
+  a link whose two legs \(i_k, j_k\) land on the <em>same</em> side contributes rank 1, and a
+  <strong>severed</strong> link (legs on opposite sides) contributes its matrix rank, 2:</p>
+  <div class="eq">$$\operatorname{rank}\bigl((\mathcal L_d)_{\langle S\rangle}\bigr) \;=\; 2^{\#\text{severed links}}.$$</div>
+
+  <p>Now read off both ranks:</p>
+  <ul>
+    <li><strong>TT is tiny.</strong> In the interleaved order, a contiguous cut severs at most
+    <em>one</em> link, so every TT bond is \(\le 2\) (they alternate \(2,1,2,1,\dots\) — the “1”
+    bonds are the gaps between independent links).</li>
+    <li><strong>CP is huge.</strong> The crossing split \(S=\{\text{all } i_k\}\) severs <em>all</em>
+    \(d\) links: the unfolding is the \(2^d\times 2^d\) <strong>identity matrix</strong>, rank \(2^d\).
+    By the Lemma, \(\operatorname{rank}_{\mathrm{CP}}(\mathcal L_d)\ge 2^d\). And \(2^d\) rank-1 terms
+    suffice (expand each \(\delta\) as \(\sum_c \boldsymbol e_c\otimes\boldsymbol e_c\) and distribute), so
+    $$\operatorname{rank}_{\mathrm{CP}}(\mathcal L_d) = 2^{d}
+    \qquad\text{while every TT rank} \le 2 .$$</li>
+  </ul>
+
+  <div class="widget" id="w-links">
+    <div class="widget-head">
+      <h3>Bipartition explorer</h3>
+      <p>Assign each mode of \(\mathcal L_d\) to side <b>A</b> or side <b>B</b> by clicking the chips.
+      The page builds the unfolding matrix (shown as a 0/1 heatmap), computes its rank numerically,
+      and checks it against the \(2^{\#\text{severed}}\) formula.</p>
+    </div>
+    <div class="controls">
+      <span class="ctl-label">links d:</span>
+      <div class="seg" id="links-d" role="group" aria-label="number of links">
+        <button data-d="2" aria-pressed="false">2 (order 4)</button>
+        <button data-d="3" class="on" aria-pressed="true">3 (order 6)</button>
+      </div>
+      <span class="ctl-label">presets:</span>
+      <button class="btn" data-preset="cut1">cut after i₁</button>
+      <button class="btn" data-preset="cut2">cut between links</button>
+      <button class="btn" data-preset="cross">odds vs evens</button>
+    </div>
+    <div id="links-chips" class="controls" style="gap:8px"></div>
+    <div id="links-status" class="controls" style="gap:8px"></div>
+    <div class="cpd-grid" style="grid-template-columns: 240px 1fr">
+      <div>
+        <div class="stat-tile"><div class="stat-label">unfolding rank (computed)</div>
+          <div class="stat-value" id="links-rank">—</div>
+          <div class="stat-note" id="links-formula"></div></div>
+      </div>
+      <div>
+        <div class="mat-title" id="links-mat-title">unfolding matrix</div>
+        <div id="links-heatmap" style="overflow-x:auto"></div>
+      </div>
+    </div>
+    <div class="readout" id="links-note"></div>
+  </div>
+
+  <div class="callout note">
+    <strong>The distributive law, weaponized.</strong> \(\mathcal L_d\) is just the product
+    \(\prod_k \delta_{i_k j_k}\) — a “deep” expression with \(d\) tiny factors. Writing it in CP form
+    means <em>expanding the product of sums into a sum of products</em>:
+    \(\prod_{k=1}^{d}\bigl(\sum_{c} e_c\otimes e_c\bigr)\) explodes into \(2^d\) monomials, and the
+    identity-matrix unfolding certifies that no algebraic miracle can collapse them.
+    Depth = keeping things factored; shallowness = being forced to expand.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-cuts">← TT cuts</a><a class="next" href="#sec-als">Next: put it on trial →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-als" class="step">
+  <div class="step-tag">Part 5 of 8</div>
+  <h2>The numerical courtroom</h2>
+
+  <p>Claims about rank should survive an optimizer trying its best to refute them. The Lemma even
+  predicts the exact best-possible error of a rank-\(R\) fit: any CP-rank-\(R\) tensor has an
+  odds-vs-evens unfolding of rank \(\le R\), and the best rank-\(R\) approximation of the identity
+  \(\boldsymbol I_N\) (all \(N=2^d\) singular values equal to 1) has Frobenius error
+  \(\sqrt{N-R}\). Truncating the CP expansion of \(\mathcal L_d\) achieves exactly that, so</p>
+  <div class="eq">$$\min_{\operatorname{rank}_{\mathrm{CP}}(\mathcal S)\le R}
+  \frac{\lVert \mathcal L_d-\mathcal S\rVert_F}{\lVert \mathcal L_d\rVert_F}
+  \;=\;\sqrt{\frac{2^d-R}{2^d}}\;.$$</div>
+  <p>No loopholes: the bound is a matrix-rank bound, so it also holds for limits of rank-\(R\)
+  tensors (no “border rank” escape). Below, real ALS runs in your browser fit CP models of every
+  rank \(R\) to \(\mathcal L_d\) — the dots should land on the dashed theoretical curve, reaching
+  zero only at \(R = 2^d\).</p>
+
+  <div class="widget" id="w-als">
+    <div class="widget-head">
+      <h3>ALS vs theory</h3>
+      <p>Pick the number of links. Each dot is a full ALS optimization (several random restarts).
+      Meanwhile the TT representation of the same tensor never needs a bond larger than 2.</p>
+    </div>
+    <div class="controls">
+      <span class="ctl-label">links d:</span>
+      <div class="seg" id="als-d" role="group" aria-label="number of links">
+        <button data-d="2" class="on" aria-pressed="true">2 → CP rank 4</button>
+        <button data-d="3" aria-pressed="false">3 → CP rank 8</button>
+      </div>
+      <span class="readout" id="als-status" style="margin-top:0">ready</span>
+    </div>
+    <div id="als-chart"></div>
+    <div class="readout" id="als-verdict"></div>
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-links">← The chain</a><a class="next" href="#sec-theorem">Next: from example to theorem →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-theorem" class="step">
+  <div class="step-tag">Part 6 of 8</div>
+  <h2>From one example to almost all tensors</h2>
+
+  <p>The chain of links is not a freak case — it is the <em>typical</em> case. For a tensor built
+  from TT cores with bonds \(\le r\), the odd-vs-even unfolding chains together
+  \(\lfloor d/2\rfloor\) independent bond crossings, and for <em>generic</em> (random) cores the
+  resulting rank reaches \(r^{\lfloor d/2\rfloor}\) whenever the mode size is at least \(r\) —
+  exactly what you watched happen in Part 3’s widget (\(2^3 = 8\), every time you reseed).
+  Applying the Lemma:</p>
+
+  <div class="callout note">
+    <strong>Theorem (Khrulkov, Novikov &amp; Oseledets, ICLR 2018 — ref. [26] of the review).</strong>
+    For almost every order-\(d\) tensor with mode sizes \(n \ge r\) and TT ranks bounded by \(r\)
+    (all except a set of measure zero in the TT parameters):
+    $$\operatorname{rank}_{\mathrm{CP}}(\mathcal T)\;\ge\; r^{\lfloor d/2\rfloor}.$$
+    (KNO’s general bound is \(\min(n,r)^{\lfloor d/2\rfloor}\), stated for even \(d\); odd \(d\)
+    follows by fixing one index.) The review paper states this bound as \(r^{d/2}\) in Sec. II-D. The same story holds for
+    hierarchical (HT) formats over trees — that version is the depth-separation theorem of
+    Cohen, Sharir &amp; Shashua (COLT 2016, ref. [10]): generic functions computed by a deep
+    convolutional sum-product network of polynomial size require shallow networks of exponential size.
+  </div>
+
+  <p>“Generic/almost every” is doing honest work here: <em>some</em> TT tensors do have small CP rank
+  (a rank-1 tensor is a TT tensor with all bonds 1!). The theorem says such tensors are a
+  measure-zero sliver inside the TT variety — pick TT cores at random and you land outside the
+  sliver with probability one.</p>
+
+  <div class="widget" id="w-growth">
+    <div class="widget-head">
+      <h3>The gap, quantified</h3>
+      <p>For mode size \(n=r\): parameters of the deep (TT) representation, \(\approx d\,r^3\),
+      versus the guaranteed minimum number of CP components of a generic such tensor,
+      \(r^{\lfloor d/2\rfloor}\) — each CP component itself costing \(d\,r\) parameters.
+      Log scale: straight line = exponential.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">rank r <input type="range" id="gr-r" min="2" max="6" value="3"><output id="gr-r-out">3</output></label>
+    </div>
+    <div id="growth-chart"></div>
+  </div>
+
+  <div class="callout minus">
+    <strong>Fine print (what the theorem does <em>not</em> say).</strong>
+    (1) It is about <em>exact</em> representation; approximation versions exist but are subtler —
+    Part 5 showed one exact-error computation.
+    (2) TT rank depends on the mode <em>ordering</em> (reorder \(\mathcal L_d\)’s modes so all
+    \(i\)’s come first and its middle TT rank blows up to \(2^{d}\) — that cut now severs all \(d\)
+    links); CP rank is ordering-invariant, so the separation statement itself is not an ordering trick.
+    (3) It concerns sum-product / polynomial architectures. For ReLU networks the picture differs:
+    the review (Sec. V-B, ref. [40]) cautions that a positive-measure set of deep ReLU CNNs
+    <em>can</em> be realized by small shallow ones — expressivity results must be interpreted with care.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-als">← Experiment</a><a class="next" href="#sec-nn">Next: back to neural networks →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-nn" class="step">
+  <div class="step-tag">Part 7 of 8</div>
+  <h2>What this buys you about neural networks</h2>
+
+  <p>Sum-product networks (paper eq. 7) compute an inner product between a rank-1 feature tensor
+  and a coefficient tensor \(\mathcal A\):</p>
+  <div class="eq">$$f(\boldsymbol x)\;=\;\bigl\langle\,\mathcal A,\;
+  \phi(x_1)\otimes\phi(x_2)\otimes\cdots\otimes\phi(x_{d_{\mathrm{in}}})\,\bigr\rangle .$$</div>
+  <p>The architecture <em>is</em> the tensor format of \(\mathcal A\):</p>
+  <ul>
+    <li>a <strong>shallow</strong> network (one hidden layer of product units) parametrizes
+    \(\mathcal A\) in <strong>CP form</strong> — its <em>width equals the number of CP components</em>;</li>
+    <li>a <strong>deep</strong> network (hierarchically composing pairs) parametrizes \(\mathcal A\)
+    in <strong>HT/TT form</strong> — its <em>size tracks the tree’s bond dimensions</em>.</li>
+  </ul>
+  <p>Now the translation is mechanical. Take the deep network computing the chain-of-links function
+  — the product of pairwise feature matchings
+  \(f(\boldsymbol x)=\prod_{k=1}^{d}\bigl\langle\phi(x_{2k-1}),\phi(x_{2k})\bigr\rangle\)
+  (so \(d_{\mathrm{in}} = 2d\) inputs, and \(\mathcal A\) is the order-\(2d\) chain \(\mathcal L_d\)).
+  Deep cost: \(d\) tiny pairwise operations. A shallow network computing the <em>same</em> function
+  must realize \(\mathcal L_d\) as a CP sum — Part 4 proved that takes \(2^d\) product units.
+  And by Part 6 this is not a hand-picked pathology: <em>almost every</em> function a small deep
+  sum-product network computes requires an exponentially wide shallow network. The same rank
+  comparison, run through RNNs with multilinear layers (whose weight tensor is a TT), gives the
+  exponential width separation between generic recurrent and shallow models (ref. [26]); for
+  second-order RNNs, whose coefficient tensor is in CP format, expressivity strictly grows with the
+  rank up to a saturation point (ref. [11]).</p>
+
+  <div class="callout plus">
+    <strong>The moral.</strong> “Depth helps” here is not an intuition — it is a rank inequality.
+    Deep architectures keep the coefficient tensor <em>factored</em> (TT/HT: products along a tree);
+    shallow ones must <em>expand</em> it (CP: one big sum). The distributive law is exponentially
+    expensive to undo, and unfolding ranks are the certificate.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-theorem">← Theorem</a><a class="next" href="#sec-quiz2">Final: quiz →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-quiz2" class="step">
+  <div class="step-tag">Part 8 of 8</div>
+  <h2>Check yourself</h2>
+  <div id="quiz2"></div>
+  <div class="stat-tile slim"><div class="stat-label">score</div><div class="stat-value" id="quiz2-score">0 / 5</div></div>
+  <div class="stepnav"><a class="prev" href="#sec-nn">← Neural nets</a><a class="next" href="index.html">Back to the main tutorial →</a></div>
+</section>
+
+</main>
+
+<footer>
+  <p>Part of the <a href="index.html">nn-tensor interactive tutorial</a>, a companion to
+  <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">R. Borsoi, K. Usevich, M. Clausel,
+  “Low-Rank Tensor Decompositions for the Theory of Neural Networks”</a>.
+  Separation results: N. Cohen, O. Sharir, A. Shashua, <em>On the expressive power of deep learning:
+  a tensor analysis</em>, COLT 2016; V. Khrulkov, A. Novikov, I. Oseledets, <em>Expressive power of
+  recurrent neural networks</em>, ICLR 2018. All ranks and fits on this page are computed live in
+  vanilla JS; only the math rendering (KaTeX) loads from a CDN. Built with Claude.</p>
+</footer>
+
+<script src="lib.js"></script>
+<script src="depth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>

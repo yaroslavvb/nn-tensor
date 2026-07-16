@@ -65,11 +65,11 @@
     <div class="controls" id="explorer-controls">
       <span class="ctl-label">Highlight:</span>
       <div class="seg" role="group" aria-label="highlight mode">
-        <button data-hl="entry" class="on">entry</button>
-        <button data-hl="fiber1">mode-1 fiber</button>
-        <button data-hl="fiber2">mode-2 fiber</button>
-        <button data-hl="fiber3">mode-3 fiber</button>
-        <button data-hl="slice3">frontal slice</button>
+        <button data-hl="entry" class="on" aria-pressed="true">entry</button>
+        <button data-hl="fiber1" aria-pressed="false">mode-1 fiber</button>
+        <button data-hl="fiber2" aria-pressed="false">mode-2 fiber</button>
+        <button data-hl="fiber3" aria-pressed="false">mode-3 fiber</button>
+        <button data-hl="slice3" aria-pressed="false">frontal slice</button>
       </div>
     </div>
     <div class="explorer-body">
@@ -328,9 +328,9 @@
     </div>
     <div class="controls">
       <div class="seg" id="tn-tabs" role="group" aria-label="format">
-        <button data-tn="tucker" class="on">Tucker (star)</button>
-        <button data-tn="tt">Tensor Train (chain)</button>
-        <button data-tn="ht">Hierarchical Tucker (binary tree)</button>
+        <button data-tn="tucker" class="on" aria-pressed="true">Tucker (star)</button>
+        <button data-tn="tt" aria-pressed="false">Tensor Train (chain)</button>
+        <button data-tn="ht" aria-pressed="false">Hierarchical Tucker (binary tree)</button>
       </div>
     </div>
     <div id="tn-diagram"></div>
@@ -369,6 +369,9 @@
     “depth helps,” obtained purely from tensor rank comparisons. Like Tucker, tree formats are not
     unique, but they admit efficient and stable SVD-based algorithms, and their well-understood
     generic ranks translate directly into expressivity results for the corresponding networks.
+    <br><br>
+    <strong>→ <a href="depth.html">Deep dive: why CP rank explodes while TT rank stays small</a></strong>
+    — an interactive proof-walkthrough of the exponential separation, with live rank computations.
   </div>
 
   <div class="stepnav"><a class="prev" href="#sec-tucker">← Tucker</a><a class="next" href="#sec-family">Next: the extended family →</a></div>
@@ -571,6 +574,7 @@
   only the math rendering (KaTeX) loads from a CDN. Built with Claude.</p>
 </footer>
 
+<script src="lib.js"></script>
 <script src="app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {

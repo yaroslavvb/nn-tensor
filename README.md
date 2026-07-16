@@ -27,6 +27,12 @@ Everything runs client-side in vanilla JS (no build step, no dependencies except
   whose factors are the first-layer weights (paper eq. 9),
 - the paper's Table I as an interactive cheat sheet, and a quiz.
 
+There is also a **deep-dive page** ([depth.html](https://yaroslavvb.github.io/nn-tensor/depth.html))
+walking through why CP rank is exponentially larger than TT/HT rank — the bipartition-unfolding
+lemma, a "chain of links" worked example whose crossing unfolding is a giant identity matrix,
+live ALS fits that land exactly on the theoretical error curve √((2^d−R)/2^d), and the
+Khrulkov–Novikov–Oseledets / Cohen–Sharir–Shashua depth-separation theorems.
+
 ## Run locally
 
 Any static server works:
