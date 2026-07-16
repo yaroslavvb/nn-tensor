@@ -27,7 +27,13 @@ Everything runs client-side in vanilla JS (no build step, no dependencies except
   whose factors are the first-layer weights (paper eq. 9),
 - the paper's Table I as an interactive cheat sheet, and a quiz.
 
-There is also a **deep-dive page** ([depth.html](https://yaroslavvb.github.io/nn-tensor/depth.html))
+There is also a **worst-case report** ([worstcase.html](https://yaroslavvb.github.io/nn-tensor/worstcase.html))
+on absolute worst-case approximation in the Frobenius (L²) vs spectral norms: incompressibility and
+format-irrelevance in L², the dimension-free rank-⌈1/ε²⌉ greedy theorem in spectral norm (with a live
+greedy lab where the flat-matrix worst case meets the 1/√t envelope), per-cut adversary lower bounds
+for TT/Tucker, and the parameter shootout showing the CP ≺ TT ≺ Tucker ranking flip.
+
+And a **deep-dive page** ([depth.html](https://yaroslavvb.github.io/nn-tensor/depth.html))
 walking through why CP rank is exponentially larger than TT/HT rank — the bipartition-unfolding
 lemma, a "chain of links" worked example whose crossing unfolding is a giant identity matrix,
 live ALS fits that land exactly on the theoretical error curve √((2^d−R)/2^d), and the

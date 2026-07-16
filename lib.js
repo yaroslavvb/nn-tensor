@@ -211,11 +211,18 @@ function lineChart(container, cfg) {
     add(svg, "line", { x1: mL, x2: W - mR, y1: Y(t.v), y2: Y(t.v), stroke: "var(--grid)", "stroke-width": 1 });
     add(svg, "text", { x: mL - 6, y: Y(t.v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" }, t.label);
   });
-  // x ticks
-  xs.forEach(x => {
-    if (cfg.xTickEvery && (x - xs[0]) % cfg.xTickEvery !== 0) return;
-    add(svg, "text", { x: X(x), y: H - mB + 16, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, String(x));
-  });
+  // x ticks — either an explicit list of {v, label}, or one label per data point
+  if (cfg.xTicks) {
+    cfg.xTicks.forEach(t => {
+      if (t.v < xs[0] || t.v > xs[xs.length - 1]) return;
+      add(svg, "text", { x: X(t.v), y: H - mB + 16, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, t.label);
+    });
+  } else {
+    xs.forEach(x => {
+      if (cfg.xTickEvery && (x - xs[0]) % cfg.xTickEvery !== 0) return;
+      add(svg, "text", { x: X(x), y: H - mB + 16, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, String(x));
+    });
+  }
   add(svg, "text", { x: mL + iw / 2, y: H - 6, "text-anchor": "middle", "font-size": 12, fill: "var(--ink-2)" }, cfg.xLabel || "");
   // baseline
   add(svg, "line", { x1: mL, x2: W - mR, y1: Y(yMin), y2: Y(yMin), stroke: "var(--baseline)", "stroke-width": 1 });

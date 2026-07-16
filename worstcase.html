@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worst-Case Tensor Approximation: L² vs Spectral Norm</title>
+<meta name="description" content="A report on absolute worst-case low-rank tensor approximation: incompressibility in the Frobenius (L²) norm, the dimension-free 1/ε² theorem in the spectral norm, and why the CP–TT–Tucker ranking flips between the two.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand"><a href="index.html" style="text-decoration:none;color:inherit">🧊 nn-tensor</a> <span style="color:var(--muted);font-weight:400">/ worst case</span></span>
+    <div class="nav-links" id="navlinks">
+      <a href="#sec-setup">Setup</a>
+      <a href="#sec-fro">L² worst case</a>
+      <a href="#sec-spec">Spectral theorem</a>
+      <a href="#sec-formats">TT &amp; Tucker</a>
+      <a href="#sec-verdict">Verdict</a>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
+</nav>
+
+<header class="hero">
+  <h1>Worst-Case Tensor Approximation: <em>L² vs Spectral</em></h1>
+  <p class="hero-sub">A report on what is provable about low-rank tensor approximation with <strong>no
+  structural assumptions at all</strong> — the absolute worst case over every tensor. The answer
+  depends violently on the norm: in Frobenius (L²) every format is hopeless and format choice is
+  irrelevant; in the spectral norm a dimension-free <em>rank ⌈1/ε²⌉ theorem</em> holds for every
+  tensor ever, and the CP-vs-TT-vs-Tucker ranking <em>flips</em>. Every rank, error, and greedy
+  step below is computed live in your browser.</p>
+  <p class="hero-cite">Part of the <a href="index.html">nn-tensor interactive tutorial</a>
+  (see also the <a href="depth.html">CP-vs-TT depth-separation deep dive</a>). Background results:
+  Eckart–Young–Mirsky; de Silva &amp; Lim 2008; Hillar &amp; Lim 2013; Frieze &amp; Kannan 1999
+  (the energy-decrement idea); Oseledets 2011 / Grasedyck 2010 (TT/HT formats).</p>
+  <a class="hero-start" href="#sec-setup">Start ↓</a>
+</header>
+
+<main>
+
+<!-- ============================================================= -->
+<section id="sec-setup" class="step">
+  <div class="step-tag">Part 1 of 5</div>
+  <h2>The setup: one question, two norms</h2>
+
+  <p>Fix order \(d\), mode size \(n\), and normalize \(\lVert\mathcal T\rVert_F = 1\). The question
+  of this report:</p>
+  <div class="callout note">
+    <strong>The worst-case question.</strong> Given a parameter budget \(P\) and a format
+    (CP, Tucker, TT), what error can be <em>guaranteed for every tensor</em> —
+    \(\;\sup_{\lVert\mathcal T\rVert_F=1}\; \min_{\mathcal S\,\in\,\text{format}(P)}\;
+    \lVert \mathcal T - \mathcal S\rVert\;\) — and how does the answer depend on the norm
+    \(\lVert\cdot\rVert\)?
+  </div>
+
+  <p>Two norms matter. The <strong>Frobenius norm</strong> is the \(L^2\) norm of the entries —
+  “total energy”:
+  \(\lVert\mathcal T\rVert_F^2 = \sum_{i_1\dots i_d} \mathcal T_{i_1\dots i_d}^2\).
+  The <strong>spectral (injective) norm</strong> is the tensor analogue of the matrix operator
+  norm — “the most any single rank-1 probe can see”:</p>
+  <div class="eq">$$\lVert\mathcal T\rVert_\sigma \;=\; \max_{\lVert u_k\rVert_2 = 1}\;
+  \bigl\langle\, \mathcal T,\; u_1\otimes u_2\otimes\cdots\otimes u_d \,\bigr\rangle .$$</div>
+  <p>For matrices these are the Schatten-2 and Schatten-∞ norms and the SVD connects them. For
+  tensors there are no singular values, but the two norms still bracket each other,
+  \(\lVert\mathcal T\rVert_\sigma \le \lVert\mathcal T\rVert_F \le
+  n^{(d-1)/2}\,\lVert\mathcal T\rVert_\sigma\), and the spectral norm exactly measures one-step
+  compressibility:</p>
+  <div class="eq">$$\min_{\text{rank-1 } \mathcal S}\;\lVert\mathcal T-\mathcal S\rVert_F^2
+  \;=\; \lVert\mathcal T\rVert_F^2 - \lVert\mathcal T\rVert_\sigma^2 .$$</div>
+
+  <div class="widget" id="w-probe">
+    <div class="widget-head">
+      <h3>What the spectral norm “sees”</h3>
+      <p>A fixed random \(4\times4\times4\) tensor (shown as frontal slices) and one rank-1 probe
+      \(u\otimes v\otimes w\). Each click runs one sweep of alternating power iteration, tuning the
+      probe to maximize its correlation with the tensor. The plateau it climbs to is (an estimate
+      of) \(\lVert\mathcal T\rVert_\sigma\) — compare it to the total energy
+      \(\lVert\mathcal T\rVert_F\).</p>
+    </div>
+    <div class="controls">
+      <button class="btn" id="probe-step">▶ one power-iteration sweep</button>
+      <button class="btn" id="probe-auto">⏵ auto</button>
+      <button class="btn" id="probe-reset">↻ reset probe</button>
+    </div>
+    <div class="cpd-grid" style="grid-template-columns: 1fr 1fr">
+      <div>
+        <div class="mat-title">the tensor 𝒯 (frontal slices)</div>
+        <div id="probe-slices" class="slice-row"></div>
+      </div>
+      <div>
+        <div class="mat-title">the probe u, v, w</div>
+        <div id="probe-vecs"></div>
+        <div class="stat-tile slim">
+          <div class="stat-label">⟨𝒯, u⊗v⊗w⟩ / ‖𝒯‖<sub>F</sub></div>
+          <div class="stat-value" id="probe-val">—</div>
+        </div>
+        <div class="readout" id="probe-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <p>Keep this picture: <em>Frobenius counts all the energy; spectral counts only what one
+  multilinear pattern can extract.</em> Everything below follows from that asymmetry.
+  (One caveat for honesty: computing \(\lVert\cdot\rVert_\sigma\) exactly is NP-hard for
+  \(d\ge 3\) — the widget’s multi-start power iteration gives a lower estimate.)</p>
+
+  <div class="stepnav"><span></span><a class="next" href="#sec-fro">Next: the L² worst case →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-fro" class="step">
+  <div class="step-tag">Part 2 of 5</div>
+  <h2>L² (Frobenius) worst case: incompressibility, for every format equally</h2>
+
+  <p>In Frobenius norm the absolute worst case has a complete and entirely negative answer, and it
+  is <em>format-agnostic</em>. Any format with \(P\) parameters describes (the closure of) a
+  \(P\)-dimensional set inside the \(N = n^d\)-dimensional tensor space. A covering / Gaussian-width
+  argument then shows that a random unit tensor — which is essentially the worst case — has almost
+  all of its energy orthogonal to any such set:</p>
+  <div class="eq">$$\text{energy captured}\;\lesssim\;\frac{P\,\log N}{N}
+  \qquad\Longrightarrow\qquad
+  \text{worst-case } \lVert\mathcal T-\mathcal S\rVert_F \;\ge\; \sqrt{1 - \tilde O(P/N)}\,.$$</div>
+  <p>Nothing about CP vs TT vs Tucker enters: only the parameter count does. Concretely, the
+  unfoldings of a random tensor have flat singular spectra, so the two-sided unfolding sandwich
+  (see the <a href="index.html#sec-tt">main tutorial</a>) forces TT bonds \(\sim n^{\lfloor d/2\rfloor}\)
+  for any constant error reduction, and the best rank-1 CP term captures only \(\Theta(dn)/n^{d}\)
+  of the energy — versus \(1/n\) for the worst matrix. Exponentially worse, in every format.</p>
+
+  <div class="widget" id="w-budget">
+    <div class="widget-head">
+      <h3>Worst-case error vs parameter budget — the two norms side by side</h3>
+      <p>Idealized worst-case guarantees (constants and log factors dropped): in Frobenius,
+      error \(\approx\sqrt{\max(0,\,1-P/n^d)}\) — a cliff at \(P \approx n^d\), i.e. you get
+      essentially nothing until you pay for every entry. In spectral norm (Part 3’s theorem),
+      error \(\approx\min(1, \sqrt{dn/P})\) — falling from the very first parameters.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">n <input type="range" id="bud-n" min="4" max="12" value="8"><output id="bud-n-out">8</output></label>
+      <label class="slider-ctl">d <input type="range" id="bud-d" min="3" max="10" value="6"><output id="bud-d-out">6</output></label>
+    </div>
+    <div id="budget-chart"></div>
+    <div class="readout" id="budget-note"></div>
+  </div>
+
+  <div class="callout minus">
+    <strong>Bottom line for L².</strong> With no structure, low-rank tensor approximation does not
+    exist as a phenomenon: worst-case (and typical) relative error stays near 1 until
+    \(P \sim n^d\). Format choice is irrelevant. Compression theorems in Frobenius norm are always
+    theorems about <em>structure</em> (smoothness, low exact rank, decay of unfolding spectra) —
+    never about the worst case.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-setup">← Setup</a><a class="next" href="#sec-spec">Next: the spectral-norm theorem →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-spec" class="step">
+  <div class="step-tag">Part 3 of 5</div>
+  <h2>Spectral norm: a dimension-free worst-case theorem</h2>
+
+  <p>Measured in \(\lVert\cdot\rVert_\sigma\), the absolute worst case is not merely better — it is
+  <em>solved</em>, by a three-line argument with no conditions on the tensor:</p>
+
+  <div class="callout note">
+    <strong>Theorem (greedy energy decrement; the Frieze–Kannan “weak regularity” mechanism).</strong>
+    For every tensor \(\mathcal T\) of any order and any \(\varepsilon\in(0,1)\), there exists
+    \(\mathcal S\) with CP rank \(< 1/\varepsilon^2\) such that
+    $$\lVert \mathcal T - \mathcal S\rVert_\sigma \;\le\; \varepsilon\,\lVert\mathcal T\rVert_F .$$
+    <em>Proof.</em> While the residual \(\mathcal R\) has
+    \(\lVert\mathcal R\rVert_\sigma > \varepsilon\lVert\mathcal T\rVert_F\), take a unit rank-1
+    \(\mathcal U\) with \(\langle\mathcal R,\mathcal U\rangle = \lVert\mathcal R\rVert_\sigma\) and
+    subtract the projection \(\langle\mathcal R,\mathcal U\rangle\,\mathcal U\). Each step removes
+    \(\langle\mathcal R,\mathcal U\rangle^2 > \varepsilon^2\lVert\mathcal T\rVert_F^2\) of
+    Frobenius energy, and there is only \(\lVert\mathcal T\rVert_F^2\) of it. ∎
+  </div>
+
+  <p>The rank bound is independent of both \(n\) and \(d\). Running the same argument for \(t\)
+  steps gives the <strong>envelope</strong>
+  \(\min_{s\le t}\lVert\mathcal R_s\rVert_\sigma \le \lVert\mathcal T\rVert_F/\sqrt{t}\), and the
+  bound is <strong>tight</strong>: a matrix with \(K\) equal singular values (a “flat matrix”)
+  keeps \(\lVert\mathcal R_t\rVert_\sigma = \lVert\mathcal T\rVert_F/\sqrt{K}\) for exactly \(K\)
+  steps — pinned at the envelope’s value at \(t=K\), so for every \(t\) the flat matrix with
+  \(K = t\) matches the \(1/\sqrt t\) envelope and no uniform improvement is possible. Since
+  matrices are order-2 tensors, no better worst-case rank than \(\Theta(1/\varepsilon^2)\) is
+  possible at any order.</p>
+
+  <div class="widget" id="w-greedy">
+    <div class="widget-head">
+      <h3>The greedy lab</h3>
+      <p>Watch the proof execute. Each step finds a near-best rank-1 term by multi-start power
+      iteration and subtracts it. Solid blue: spectral residual — it crashes below the
+      \(1/\sqrt{t}\) envelope. Aqua: Frobenius residual — for the random tensor it barely moves
+      while the spectral error collapses: <em>the two-norms story in one picture</em>. Switch to
+      the flat matrix to see the worst case hold flat at \(1/\sqrt K = 0.25\) — exactly the
+      envelope’s value at \(t=K\) — and then vanish all at once at \(t=K\).</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="greedy-preset" role="group" aria-label="tensor">
+        <button data-p="random" class="on" aria-pressed="true">random 8×8×8</button>
+        <button data-p="flat" aria-pressed="false">flat matrix 32×32, K=16</button>
+      </div>
+      <button class="btn" id="greedy-step">▶ one greedy step</button>
+      <button class="btn" id="greedy-auto">⏵ auto</button>
+      <button class="btn" id="greedy-reset">↻ reset</button>
+      <span class="readout" id="greedy-status" style="margin-top:0">t = 0</span>
+    </div>
+    <div id="greedy-chart"></div>
+    <div class="readout" id="greedy-note"></div>
+  </div>
+
+  <p>Why is this consistent with Part 2’s hopelessness? Because they are the <em>same fact</em>.
+  The tensors that are Frobenius-incompressible spread their energy so thin that every rank-1 probe
+  sees almost nothing — but “every probe sees almost nothing” <em>is</em> the statement
+  \(\lVert\mathcal T\rVert_\sigma \ll \lVert\mathcal T\rVert_F\): such tensors are already
+  spectral-norm-close to <em>zero</em>. A random Gaussian tensor has
+  \(\lVert\mathcal T\rVert_\sigma/\lVert\mathcal T\rVert_F \approx c\sqrt{dn}/n^{d/2}\) — within a
+  \(\sqrt d\) factor of the minimum possible. One phenomenon, two norms, opposite verdicts.</p>
+
+  <div class="callout plus">
+    <strong>Bonus: CP’s pathologies vanish here.</strong> The greedy decomposition always exists
+    (no de Silva–Lim ill-posedness — we never ask for the <em>best</em> rank-R tensor), and it is
+    well-conditioned: its coefficients satisfy \(\sum_t \lambda_t^2 \le \lVert\mathcal T\rVert_F^2\),
+    so there are no diverging, cancelling components. The one thing that remains hard is the
+    rank-1 step itself (NP-hard exactly; with an \(\alpha\)-approximate rank-1 oracle the same proof
+    gives rank \(\le \alpha^2/\varepsilon^2\)).
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-fro">← L² worst case</a><a class="next" href="#sec-formats">Next: what TT and Tucker must pay →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-formats" class="step">
+  <div class="step-tag">Part 4 of 5</div>
+  <h2>TT and Tucker in the spectral norm: upper bounds for free, lower bounds per cut</h2>
+
+  <p><strong>Upper bounds are inherited.</strong> The greedy output has CP rank \(R < 1/\varepsilon^2\),
+  and a rank-\(R\) CPD embeds in every format: TT with all bonds \(\le R\), Tucker with all
+  multilinear ranks \(\le \min(n, R)\). So TT and Tucker also achieve
+  \(\varepsilon\lVert\mathcal T\rVert_F\) spectral error, worst case, with constant
+  (n-and-d-independent) ranks. The question is what they <em>pay in parameters</em>, and here the
+  dense parameterizations differ sharply.</p>
+
+  <p><strong>Lower bounds: every cut has its own adversary.</strong> Fix a target
+  \(\varepsilon\) with \(K := \lceil 1/(2\varepsilon^2)\rceil \le n\), and pick any neighboring pair
+  of modes \((k, k{+}1)\). Build the <em>padded flat matrix</em>: a rank-\(K\) matrix with \(K\)
+  equal singular values placed across modes \(k,k{+}1\), tensored with unit vectors in every other
+  mode. If \(\mathcal S\) approximates it within \(\varepsilon\lVert\mathcal T\rVert_F\) in
+  spectral norm, then contracting \(\mathcal S\) with the padding vectors (legitimate rank-1
+  probes!) leaves an \(n\times n\) matrix that must be \(\varepsilon\)-close in operator norm —
+  and by Eckart–Young its rank, which is at most the TT bond \(r_k\) (and at most the mode-\(k\)
+  Tucker rank), must be at least \(K\). Since this works for <em>every</em> \(k\):</p>
+
+  <div class="callout note">
+    <strong>Worst-case format costs in spectral norm</strong> (target
+    \(\varepsilon\lVert\mathcal T\rVert_F\); regime \(1/(2\varepsilon^2)\le n\); dense formats):
+    <ul style="margin:8px 0 0">
+      <li><strong>CP</strong>: rank \(\Theta(1/\varepsilon^2)\) → parameters
+        \(O(dn/\varepsilon^{2})\).</li>
+      <li><strong>TT</strong>: <em>every</em> bond \(\Theta(1/\varepsilon^2)\) → interior cores are
+        \((1/\varepsilon^2)\times n\times(1/\varepsilon^2)\), parameters
+        \(\Theta(dn/\varepsilon^{4})\).</li>
+      <li><strong>Tucker</strong>: <em>every</em> multilinear rank \(\Theta(\min(n, 1/\varepsilon^2))\)
+        → the core alone has \(\min(n,1/\varepsilon^{2})^{\,d}\) entries — exponential in \(d\).</li>
+    </ul>
+  </div>
+
+  <div class="widget" id="w-adversary">
+    <div class="widget-head">
+      <h3>The adversary, cut by cut</h3>
+      <p>Slide the adversary along the chain: the flat matrix sits across one pair of modes and
+      forces that bond to \(K\). The staircase shows the <em>exact</em> best spectral error of any
+      approximant whose bond at the attacked cut is \(r\): it stays at
+      \(1/\sqrt K > \varepsilon\) until \(r = K\), then drops to zero. A format must survive every
+      adversary at once — so all its bonds pay.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">attacked cut k <input type="range" id="adv-k" min="1" max="5" value="2"><output id="adv-k-out">2</output></label>
+      <label class="slider-ctl">target ε <input type="range" id="adv-e" min="1" max="4" value="2"><output id="adv-e-out">0.25</output></label>
+    </div>
+    <div id="adv-diagram"></div>
+    <div id="adv-chart"></div>
+    <div class="readout" id="adv-note"></div>
+  </div>
+
+  <div class="callout minus">
+    <strong>The fine print.</strong>
+    (1) The TT gap is partly an artifact of <em>dense</em> cores: converting a rank-\(R\) CPD to TT
+    yields interior cores whose slices are <em>diagonal</em> — allowing that structure, “TT with
+    CP-structured cores” matches CP’s \(O(dn/\varepsilon^2)\). The \(\varepsilon^{-4}\) is the price
+    of the unstructured TT parameterization, not of the tree topology.
+    (2) The lower bounds need \(1/(2\varepsilon^2)\le n\) (the adversary must fit in one mode);
+    for smaller \(\varepsilon\) the forced ranks cap at \(n\) and the analysis transitions toward
+    the Frobenius regime.
+    (3) Everything here is existential: finding the greedy terms is NP-hard in general, and
+    poly-time algorithms only approximate \(\lVert\cdot\rVert_\sigma\) within polynomial factors
+    (roughly \(n^{1/4}\) for order 3 via sum-of-squares), with hardness evidence suggesting that
+    is close to unavoidable.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-spec">← Spectral theorem</a><a class="next" href="#sec-verdict">Next: the verdict →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-verdict" class="step">
+  <div class="step-tag">Part 5 of 5</div>
+  <h2>The verdict: which format, when, and under which condition</h2>
+
+  <div class="widget" id="w-shootout">
+    <div class="widget-head">
+      <h3>Parameters needed vs target spectral error</h3>
+      <p>Worst-case parameter cost to guarantee \(\lVert\mathcal T-\mathcal S\rVert_\sigma\le
+      \varepsilon\lVert\mathcal T\rVert_F\) for every tensor, per format (dense parameterizations;
+      each curve capped at the \(n^d\) cost of storing the tensor outright). Log–log: slope reads
+      off the \(\varepsilon\)-exponent — 2 for CP, 4 for TT, \(2d\) for Tucker’s core.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">n <input type="range" id="sh-n" min="8" max="128" step="8" value="32"><output id="sh-n-out">32</output></label>
+      <label class="slider-ctl">d <input type="range" id="sh-d" min="3" max="8" value="5"><output id="sh-d-out">5</output></label>
+    </div>
+    <div id="shootout-chart"></div>
+    <div class="readout" id="shootout-note"></div>
+  </div>
+
+  <h3 class="subhead">Answers to the three questions</h3>
+
+  <div class="callout note">
+    <strong>Under which condition can a worst-case approximation have few parameters in the
+    spectral norm?</strong> No condition on the tensor — the guarantee is unconditional. The only
+    conditions are on the <em>target</em>: the budget is \(P \approx dn/\varepsilon^2\), which is
+    “small” precisely when \(\varepsilon \gg \sqrt{dn/n^{d}}\) — i.e. any accuracy coarser than the
+    spectral-norm floor a random tensor already sits at. Push \(\varepsilon\) below that floor and
+    you are asking for near-exact representation, where Part 2’s \(n^d\) wall returns. (And
+    computationally: you need a rank-1 oracle; an \(\alpha\)-approximate one inflates the rank by
+    \(\alpha^2\).)
+  </div>
+
+  <div class="table-wrap">
+  <table class="cheat">
+    <thead><tr><th>regime</th><th>CP</th><th>TT</th><th>Tucker</th><th>who wins</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>L² (Frobenius), worst case</td>
+        <td>\(\tilde\Theta(n^d)\) params for constant error</td>
+        <td>\(\tilde\Theta(n^d)\)</td>
+        <td>\(\tilde\Theta(n^d)\)</td>
+        <td><b>tie — all hopeless</b>; only the parameter count matters</td>
+      </tr>
+      <tr>
+        <td>spectral, worst case</td>
+        <td>\(O(dn/\varepsilon^2)\)</td>
+        <td>\(\Theta(dn/\varepsilon^4)\) dense; \(O(dn/\varepsilon^2)\) with diagonal cores</td>
+        <td>\(\Theta(\min(n,\varepsilon^{-2})^d)\) core</td>
+        <td><b>CP</b> ≻ TT ≻ Tucker</td>
+      </tr>
+      <tr>
+        <td>L², structured (low TT-rank truth, smoothness…)</td>
+        <td>ill-posed, NP-hard, can be exponentially worse</td>
+        <td>quasi-optimal via TT-SVD (√(d−1) factor)</td>
+        <td>quasi-optimal via HOSVD (√d factor), core exponential in d</td>
+        <td><b>TT/HT</b> — the opposite ranking</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p><strong>Is CP, TT, or Tucker better in the worst case at a small parameter budget?</strong>
+  In the spectral norm: <strong>CP, strictly</strong> — \(dn/\varepsilon^2\) versus
+  \(dn/\varepsilon^4\) (dense TT) versus an \(\varepsilon^{-2d}\) core (Tucker). This is a complete
+  reversal of the structured-Frobenius theory, where CP was the pathological format and the tree
+  formats carried all the guarantees. The reason is geometric: worst-case spectral approximation is
+  about <em>additively accumulating a few good rank-1 probes</em>, which is CP’s native shape.
+  The multiplicative, entanglement-carrying structure that makes TT/HT exponentially powerful
+  <em>on structured tensors in L²</em> buys nothing against a worst-case adversary in
+  \(\lVert\cdot\rVert_\sigma\) — while its dense cores keep charging \(r^2\) per mode for it.
+  In the Frobenius worst case: a tie (nobody compresses). If you care about small parameter counts
+  and can only have a worst-case guarantee, you want the <em>weak norm and the flat format</em>;
+  if you have structure and want \(L^2\) reconstruction, you want the <em>tree formats</em> — and
+  the two recommendations are not in tension, because they answer different questions.</p>
+
+  <div class="callout plus">
+    <strong>TL;DR.</strong> L² worst case: error \(\approx\sqrt{1-P/n^d}\) for every format —
+    incompressible, format-irrelevant. Spectral worst case: rank \(\lceil 1/\varepsilon^2\rceil\)
+    always suffices (tight, dimension-free); parameter ranking CP \(dn/\varepsilon^2\) ≺ TT
+    \(dn/\varepsilon^4\) ≺ Tucker \(\varepsilon^{-2d}\), valid while \(1/(2\varepsilon^2)\le n\).
+    Small parameters in the spectral norm are available <em>unconditionally</em> — for any tensor —
+    as long as the accuracy target stays above the random-tensor floor \(\sim\sqrt{dn}/n^{d/2}\),
+    and modulo the NP-hardness of the rank-1 step.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-formats">← TT &amp; Tucker</a><a class="next" href="index.html">Back to the main tutorial →</a></div>
+</section>
+
+</main>
+
+<footer>
+  <p>Part of the <a href="index.html">nn-tensor interactive tutorial</a> (companion to
+  <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">arXiv:2508.18408</a>);
+  see also the <a href="depth.html">depth-separation deep dive</a>.
+  Key references: C. Eckart, G. Young 1936; A. Frieze, R. Kannan, <em>Quick approximation to
+  matrices and applications</em>, Combinatorica 1999 (energy decrement / weak regularity);
+  V. de Silva, L.-H. Lim, SIMAX 2008 (ill-posedness of best CP approximation); C. Hillar, L.-H. Lim,
+  <em>Most tensor problems are NP-hard</em>, JACM 2013; I. Oseledets, SISC 2011 (TT);
+  L. Grasedyck, SIMAX 2010 (HT). The per-cut lower bounds are elementary contraction arguments
+  presented with proof sketches in the text. All numerics run in vanilla JS; only KaTeX loads from
+  a CDN. Built with Claude.</p>
+</footer>
+
+<script src="lib.js"></script>
+<script src="worstcase.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>
