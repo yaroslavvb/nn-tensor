@@ -243,11 +243,12 @@ function lineChart(container, cfg) {
       if (s.ys[i] == null) return;   // pending/absent data point — draw nothing
       add(svg, "circle", { cx: p[0], cy: p[1], r: 3.2, fill: s.color });
     });
-    // direct label at line end (or start, to avoid collisions when series coincide)
+    // direct label at line end (or start, to avoid collisions when series coincide);
+    // labelDy nudges the label vertically when several series share an anchor point
     const anchor = s.labelAt === "start" ? pts[0] : pts[pts.length - 1];
     add(svg, "text", {
       x: s.labelAt === "start" ? anchor[0] + 10 : anchor[0] + 8,
-      y: s.labelAt === "start" ? anchor[1] - 8 : anchor[1] + 4,
+      y: (s.labelAt === "start" ? anchor[1] - 8 : anchor[1] + 4) + (s.labelDy || 0),
       "font-size": 11.5, "font-weight": 600, fill: "var(--ink-2)"
     }, s.name);
   });

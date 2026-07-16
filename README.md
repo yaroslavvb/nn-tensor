@@ -33,6 +33,12 @@ format-irrelevance in L², the dimension-free rank-⌈1/ε²⌉ greedy theorem i
 greedy lab where the flat-matrix worst case meets the 1/√t envelope), per-cut adversary lower bounds
 for TT/Tucker, and the parameter shootout showing the CP ≺ TT ≺ Tucker ranking flip.
 
+There is a **Gaussian-noise page** ([gaussian.html](https://yaroslavvb.github.io/nn-tensor/gaussian.html))
+on the low-rank approximation error of an n×n Gaussian random matrix: Eckart–Young + the
+quarter-circle law, live in-browser SVD simulations laid over the closed-form error curve
+(parametrized by q = (2θ + sin 2θ)/π), and the asymptotic decay laws — spectral error ≈ (π/4)q,
+Frobenius error ≈ 0.907·q^(3/2) near full rank, and captured energy ≈ 4r/n at low rank.
+
 And a **deep-dive page** ([depth.html](https://yaroslavvb.github.io/nn-tensor/depth.html))
 walking through why CP rank is exponentially larger than TT/HT rank — the bipartition-unfolding
 lemma, a "chain of links" worked example whose crossing unfolding is a giant identity matrix,

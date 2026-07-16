@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compressing Pure Noise: Low-Rank Approximation of a Gaussian Matrix</title>
+<meta name="description" content="How the best rank-r approximation error of an n×n Gaussian random matrix behaves: Eckart–Young, the quarter-circle law, an exact error formula, live simulations, and the asymptotic decay laws (π/4)q and 0.907·q^(3/2).">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand"><a href="index.html" style="text-decoration:none;color:inherit">🧊 nn-tensor</a> <span style="color:var(--muted);font-weight:400">/ gaussian noise</span></span>
+    <div class="nav-links" id="navlinks">
+      <a href="#sec-setup">Spectrum</a>
+      <a href="#sec-curve">Error curve</a>
+      <a href="#sec-formula">Formula</a>
+      <a href="#sec-asym">Asymptotics</a>
+      <a href="#sec-verdict">Verdict</a>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
+</nav>
+
+<header class="hero">
+  <h1>Compressing Pure Noise: <em>Low-Rank Approximation of a Gaussian Matrix</em></h1>
+  <p class="hero-sub">Take an \(n\times n\) matrix of i.i.d. \(\mathcal N(0,1)\) entries and ask
+  the most basic question in low-rank approximation: <strong>how small is the best rank-\(r\)
+  error, and how fast does it decay with \(r\)?</strong> The answer is completely explicit —
+  Eckart–Young reduces it to the singular values, the quarter-circle law pins those down, and one
+  trig substitution gives a closed-form error curve with clean power-law asymptotics. Every
+  spectrum on this page is computed live in your browser and laid over the formula.</p>
+  <p class="hero-cite">Part of the <a href="index.html">nn-tensor interactive tutorial</a>
+  (see also the <a href="worstcase.html">worst-case approximation report</a> — this page is its
+  quantitative matrix warm-up). Background: Eckart–Young 1936, Mirsky 1960;
+  Marchenko–Pastur 1967; Geman 1980 (\(\sigma_1\to 2\sqrt n\)); Edelman 1988 (hard edge);
+  Tracy–Widom 1994 (soft edge).</p>
+  <a class="hero-start" href="#sec-setup">Start ↓</a>
+</header>
+
+<main>
+
+<!-- ============================================================= -->
+<section id="sec-setup" class="step">
+  <div class="step-tag">Part 1 of 5</div>
+  <h2>Eckart–Young + the quarter-circle law: everything is in the spectrum</h2>
+
+  <p>Write the SVD \(A = \sum_{j=1}^{n} \sigma_j u_j v_j^{\mathsf T}\) with
+  \(\sigma_1 \ge \dots \ge \sigma_n \ge 0\), and let
+  \(A_r = \sum_{j\le r} \sigma_j u_j v_j^{\mathsf T}\) be the rank-\(r\) truncation. The
+  <strong>Eckart–Young–Mirsky theorem</strong> says truncation is optimal in both norms, with
+  error read directly off the discarded singular values:</p>
+  <div class="eq">$$\min_{\operatorname{rank} B \le r}\lVert A - B\rVert_2 = \sigma_{r+1},
+  \qquad
+  \min_{\operatorname{rank} B \le r}\lVert A - B\rVert_F = \Big(\textstyle\sum_{j&gt;r}\sigma_j^2\Big)^{1/2}.$$</div>
+  <p>So for a random matrix the whole question is: <em>what does its singular spectrum look
+  like?</em> For i.i.d. \(\mathcal N(0,1)\) entries the answer is a classical limit law: the
+  normalized values \(\sigma_j/\sqrt n\) fill the interval \([0,2]\) with the
+  <strong>quarter-circle density</strong></p>
+  <div class="eq">$$\rho(x) = \frac{1}{\pi}\sqrt{4 - x^2}, \qquad 0 \le x \le 2,$$</div>
+  <p>(the Marchenko–Pastur law for \(A^{\mathsf T}A/n\), pushed through \(x = \sqrt\lambda\)).
+  Three consequences to keep in mind: \(\sigma_1 \approx 2\sqrt n\),
+  \(\;\lVert A\rVert_F \approx n\) (exactly, \(\mathbb E\lVert A\rVert_F^2 = n^2\)), and — the
+  point of this page — <em>no decay</em>: the sorted spectrum is a smooth, gapless arc, not a
+  staircase falling off a cliff.</p>
+
+  <div class="widget" id="w-spectrum">
+    <div class="widget-head">
+      <h3>The <code>ListPlot[SingularValueList@mat]</code> picture, live</h3>
+      <p>All \(n\) singular values of a fresh \(\mathcal N(0,1)\) sample (blue), sorted
+      descending and normalized by \(\sqrt n\), against the quarter-circle quantile curve
+      (dashed). This one matrix drives <em>every</em> widget on the page — resample it and watch
+      each plot flutter around the same laws.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">n <input type="range" id="qc-n" min="25" max="300" step="25" value="100"><output id="qc-n-out">100</output></label>
+      <button class="btn" id="qc-resample">🎲 resample A</button>
+    </div>
+    <div id="spectrum-chart"></div>
+    <div class="readout" id="spectrum-note"></div>
+  </div>
+
+  <div class="callout minus">
+    <strong>First verdict, by eye.</strong> Useful low-rank structure means a spectrum with a few
+    large singular values towering over a fast-decaying tail. Gaussian noise has the opposite: a
+    bulk where <em>every</em> scale between \(0\) and \(2\sqrt n\) is occupied with positive
+    density. Whatever rank you keep, the largest discarded singular value is barely smaller than
+    the smallest kept one.
+  </div>
+
+  <div class="stepnav"><span></span><a class="next" href="#sec-curve">Next: the error curve →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-curve" class="step">
+  <div class="step-tag">Part 2 of 5</div>
+  <h2>The error curve: simulation meets formula</h2>
+
+  <p>Define the two relative errors of the best rank-\(r\) approximation,</p>
+  <div class="eq">$$\mathcal E_2(r) = \frac{\sigma_{r+1}}{\sigma_1}, \qquad
+  \mathcal E_F(r) = \frac{\big(\sum_{j&gt;r}\sigma_j^2\big)^{1/2}}{\big(\sum_{j}\sigma_j^2\big)^{1/2}},$$</div>
+  <p>both equal to \(1\) at \(r=0\) and \(0\) at \(r=n\). Below, the solid curves are the
+  <em>exact</em> Eckart–Young errors of the sampled matrix from Part 1; the dashed curves are the
+  closed-form quarter-circle prediction derived in Part 3. They agree to about a percent already
+  at \(n=100\) — random matrices self-average ferociously.</p>
+
+  <div class="widget" id="w-error">
+    <div class="widget-head">
+      <h3>Relative error vs kept rank</h3>
+      <p>Drag the rank slider to read off both errors and the captured energy. Note the shape:
+      the spectral error falls almost linearly at first (you're just walking down the arc), while
+      the Frobenius error stays high longer but dives faster near full rank — the tail values
+      carry almost no squared energy.</p>
+    </div>
+    <div class="controls">
+      <label class="slider-ctl">rank r <input type="range" id="er-r" min="0" max="100" value="25"><output id="er-r-out">25</output></label>
+    </div>
+    <div id="error-chart"></div>
+    <div class="cpd-grid" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="stat-tile slim">
+        <div class="stat-label">spectral E₂/‖A‖₂</div>
+        <div class="stat-value" id="er-spec">—</div>
+      </div>
+      <div class="stat-tile slim">
+        <div class="stat-label">Frobenius E_F/‖A‖_F</div>
+        <div class="stat-value" id="er-fro">—</div>
+      </div>
+      <div class="stat-tile slim">
+        <div class="stat-label">energy captured</div>
+        <div class="stat-value" id="er-energy">—</div>
+      </div>
+    </div>
+    <div class="readout" id="er-note"></div>
+  </div>
+
+  <div class="callout note">
+    <strong>How expensive is progress?</strong> Reading the formula: to <em>halve</em> the
+    spectral error you must keep \(39\%\) of all ranks; to halve the Frobenius error, \(34\%\).
+    To reach \(10\%\) error you need \(87\%\) of ranks (spectral) or \(77\%\) (Frobenius). A
+    rank-\(10\) approximation of a \(100\times100\) Gaussian matrix still carries \(\sim 80\%\)
+    spectral and \(\sim 83\%\) Frobenius error. There is no free compression anywhere on this
+    curve.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-setup">← Spectrum</a><a class="next" href="#sec-formula">Next: the formula →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-formula" class="step">
+  <div class="step-tag">Part 3 of 5</div>
+  <h2>The formula: one substitution solves the whole curve</h2>
+
+  <p>In the large-\(n\) limit, keeping rank \(r = \alpha n\) means keeping every singular value
+  above a threshold \(x_*\) chosen so the quarter-circle puts mass \(\alpha\) above it:
+  \(\alpha = \int_{x_*}^{2}\rho(x)\,dx\). The substitution \(x_* = 2\sin\theta\),
+  \(\theta \in [0, \pi/2]\), makes every integral elementary. The <strong>discarded fraction</strong>
+  \(q = 1 - \alpha\) parametrizes as</p>
+  <div class="eq">$$q \;=\; \frac{2\theta + \sin 2\theta}{\pi}, \qquad x_* = 2\sin\theta,$$</div>
+  <p>and the two errors come out in closed form. The spectral error is simply the largest
+  discarded value, \(\sigma_{r+1} \approx \sqrt n\, x_*\); the Frobenius error integrates the
+  discarded energy \(x^2\rho(x)\):</p>
+  <div class="eq">$$\boxed{\;\mathcal E_2 = \sin\theta\;}
+  \qquad\qquad
+  \boxed{\;\mathcal E_F = \sqrt{\frac{2\theta - \tfrac12 \sin 4\theta}{\pi}}\;}$$</div>
+  <p>with absolute versions \(E_2 \approx 2\sqrt{n}\,\sin\theta\) and
+  \(E_F \approx n\,\mathcal E_F\). (Check the endpoints: \(\theta = \pi/2\) is \(q=1\), errors
+  \(=1\); \(\theta = 0\) is full rank, errors \(=0\).) That's the entire theory — a one-parameter
+  curve \(\big(q(\theta),\ \sin\theta,\ \mathcal E_F(\theta)\big)\). It is what the dashed lines
+  in Part 2 plot, and here is how it scores against the live sample:</p>
+
+  <div class="table-wrap">
+  <table class="cheat">
+    <thead><tr><th>rank r</th><th>r/n</th><th>spectral (formula)</th><th>spectral (sample)</th><th>Frobenius (formula)</th><th>Frobenius (sample)</th></tr></thead>
+    <tbody id="f-table-body"></tbody>
+  </table>
+  </div>
+  <div class="readout" id="f-table-cap"></div>
+
+  <div class="callout note">
+    <strong>Fine print (finite \(n\)).</strong> The formula is a bulk statement, exact as
+    \(n\to\infty\) with \(r/n\) fixed. At finite \(n\): the top edge fluctuates on scale
+    \(n^{-1/6}\) around \(2\sqrt n\) (Tracy–Widom); the bottom few singular values live at the
+    hard edge on scale \(n^{-1/2}\) (Edelman), so the last handful of ranks drift off the curve;
+    and a single realization concentrates so strongly that error bars are already invisible at
+    \(n \approx 100\). Universality makes the same curve appear for <em>any</em> i.i.d. zero-mean
+    unit-variance entries — Rademacher \(\pm1\), uniform, you name it — while heavy tails or
+    correlated entries break it.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-curve">← Error curve</a><a class="next" href="#sec-asym">Next: asymptotics →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-asym" class="step">
+  <div class="step-tag">Part 4 of 5</div>
+  <h2>Asymptotics: the decay laws</h2>
+
+  <p>Expand the closed form at its two ends. <strong>Near full rank</strong> — discard a small
+  fraction \(q = 1 - r/n \to 0\), so \(\theta \approx \pi q/4\):</p>
+  <div class="eq">$$\mathcal E_2 \;\sim\; \frac{\pi}{4}\,q \;\approx\; 0.785\,q,
+  \qquad
+  \mathcal E_F \;\sim\; \frac{\pi}{2\sqrt 3}\,q^{3/2} \;\approx\; 0.907\,q^{3/2}.$$</div>
+  <p><strong>Low rank</strong> — keep a small fraction \(\alpha = r/n \to 0\), so
+  \(\theta \to \pi/2\):</p>
+  <div class="eq">$$\mathcal E_2 \;\approx\; 1 - \tfrac12\Big(\tfrac{3\pi\alpha}{4}\Big)^{2/3}
+  \;\approx\; 1 - 0.885\,\alpha^{2/3},
+  \qquad
+  \mathcal E_F \;\approx\; 1 - 2\alpha .$$</div>
+  <p>The second expansion contains the most quotable fact on this page: squaring it, the
+  <strong>energy captured by the best rank-\(r\) approximation is \(\approx 4r/n\)</strong>.
+  Projecting onto \(r\) <em>random</em> directions captures \(r/n\) in expectation — so the
+  optimal SVD basis beats blind guessing by a factor of four, and no more. And for fixed \(r\)
+  with \(n \to \infty\), both relative errors \(\to 1\): a fixed-rank approximation of large
+  noise is asymptotically worthless.</p>
+
+  <div class="widget" id="w-decay">
+    <div class="widget-head">
+      <h3>Power laws on log–log axes</h3>
+      <p>Both regimes, sample (solid) vs formula (dashed) vs the pure power law (gray). On
+      log–log axes a power law is a straight line whose slope is the exponent — watch the sample
+      lock onto slopes \(1\) and \(3/2\) (tail regime), or \(2/3\) and \(1\) (head regime).</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="decay-reg" role="group" aria-label="regime">
+        <button data-reg="tail" class="on" aria-pressed="true">near full rank: error vs q</button>
+        <button data-reg="head" aria-pressed="false">low rank: progress vs α</button>
+      </div>
+    </div>
+    <div id="decay-chart"></div>
+    <div class="readout" id="decay-note"></div>
+  </div>
+
+  <div class="callout minus">
+    <strong>What the decay is <em>not</em>.</strong> For structured matrices one hopes for
+    \(\sigma_j \lesssim c^{-j}\) (exponential; smooth kernels, analytic functions) or
+    \(\sigma_j \lesssim j^{-s}\) (algebraic; Sobolev-type smoothness), giving errors that
+    collapse at tiny ranks. Gaussian noise offers neither: the error is
+    \(\Theta(1)\) until \(r\) is a constant fraction of \(n\), and even its fastest regime —
+    the final approach to full rank — is only a \(q^{3/2}\) power law in the fraction you
+    <em>threw away</em>. Rank buys you nothing because noise has no preferred directions.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-formula">← Formula</a><a class="next" href="#sec-verdict">Next: verdict →</a></div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-verdict" class="step">
+  <div class="step-tag">Part 5 of 5</div>
+  <h2>The verdict: noise is incompressible — and that's useful</h2>
+
+  <p>Three ways to read the result. <strong>As a negative:</strong> low-rank approximation is a
+  theory of <em>structure</em>, and pure randomness is its exact opposite — the worst case and
+  the random case nearly coincide (this is the matrix shadow of the
+  <a href="worstcase.html">L² worst-case incompressibility theorem</a>, where the same flat-spectrum
+  logic makes random <em>tensors</em> exponentially incompressible in every format).
+  <strong>As a baseline:</strong> whenever you truncate real data, the quarter-circle curve is the
+  null hypothesis — any singular value inside the bulk edge \(2\sqrt n\,\hat\sigma_{\text{noise}}\)
+  is indistinguishable from noise, which is exactly the logic behind optimal hard thresholds of the
+  Gavish–Donoho \(4/\sqrt3\) type. <strong>As a positive:</strong> in the additive model
+  \(\text{data} = \text{signal} + \text{noise}\), the incompressibility of noise is the
+  <em>good news</em> — the SVD can't accidentally "compress" the noise into your kept components;
+  what truncation keeps is (mostly) whatever structure was really there.</p>
+
+  <div class="callout plus">
+    <strong>TL;DR.</strong> For an \(n\times n\) Gaussian matrix, the best rank-\(r\)
+    approximation errors are, with \(q = 1 - r/n\) and \(q = (2\theta + \sin2\theta)/\pi\):
+    relative spectral error \(\sin\theta\), relative Frobenius error
+    \(\sqrt{(2\theta - \tfrac12\sin4\theta)/\pi}\). Decay: \(\approx 0.785\,q\) and
+    \(\approx 0.907\,q^{3/2}\) near full rank; at low rank the captured energy is only
+    \(4r/n\) — four times better than random directions — and fixed rank captures nothing as
+    \(n\) grows. No exponential decay exists at any rank: noise has no preferred directions,
+    so rank — the currency of every decomposition on this site — cannot buy any of it.
+  </div>
+
+  <div class="stepnav"><a class="prev" href="#sec-asym">← Asymptotics</a><a class="next" href="index.html">Back to the main tutorial →</a></div>
+</section>
+
+</main>
+
+<footer>
+  <p>Part of the <a href="index.html">nn-tensor interactive tutorial</a> (companion to
+  <a href="https://arxiv.org/abs/2508.18408" target="_blank" rel="noopener">arXiv:2508.18408</a>);
+  see also the <a href="worstcase.html">worst-case approximation report</a> and the
+  <a href="depth.html">depth-separation deep dive</a>.
+  Key references: C. Eckart, G. Young 1936; L. Mirsky 1960 (unitarily invariant norms);
+  V. Marchenko, L. Pastur 1967 (bulk law); S. Geman 1980 (\(\sigma_1 \to 2\sqrt n\));
+  A. Edelman 1988 (hard-edge \(\sigma_{\min}\sim n^{-1/2}\)); C. Tracy, H. Widom 1994
+  (soft-edge fluctuations); M. Gavish, D. Donoho 2014 (<em>The optimal hard threshold for
+  singular values is \(4/\sqrt3\)</em>). Singular values are computed in-browser by Householder
+  tridiagonalization + implicit-shift QL on the Gram matrix; all numerics vanilla JS, only KaTeX
+  from a CDN. Built with Claude.</p>
+</footer>
+
+<script src="lib.js"></script>
+<script src="gaussian.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>

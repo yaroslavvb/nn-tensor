@@ -127,7 +127,9 @@
   \qquad\Longrightarrow\qquad
   \text{worst-case } \lVert\mathcal T-\mathcal S\rVert_F \;\ge\; \sqrt{1 - \tilde O(P/N)}\,.$$</div>
   <p>Nothing about CP vs TT vs Tucker enters: only the parameter count does. Concretely, the
-  unfoldings of a random tensor have flat singular spectra, so the two-sided unfolding sandwich
+  unfoldings of a random tensor have flat singular spectra (the matrix case of this is worked out
+  quantitatively — quarter-circle law, exact error curve, asymptotics — in the
+  <a href="gaussian.html">Gaussian-noise deep dive</a>), so the two-sided unfolding sandwich
   (see the <a href="index.html#sec-tt">main tutorial</a>) forces TT bonds \(\sim n^{\lfloor d/2\rfloor}\)
   for any constant error reduction, and the best rank-1 CP term captures only \(\Theta(dn)/n^{d}\)
   of the energy — versus \(1/n\) for the worst matrix. Exponentially worse, in every format.</p>
