@@ -59,6 +59,10 @@ shared deck framework (slides.css + slides.js):
 - [slides-crystal-genai.html](https://yaroslavvb.github.io/nn-tensor/slides-crystal-genai.html) —
   "Generative AI for Crystal Structures: A Review" (arXiv:2509.02723): CSP vs generative paradigm,
   representations, architecture zoo, an explorable 61-model taxonomy catalog, datasets, metrics.
+- [slides-gnome.html](https://yaroslavvb.github.io/nn-tensor/slides-gnome.html) —
+  "Scaling deep learning for materials discovery" / GNoME (Nature 2023): convex-hull explainer,
+  SAPS + compositional pipelines, the active-learning flywheel with real hit-rate gains, scaling
+  laws, and the zero-shot pretrained interatomic potential.
 - [slides-llamat.html](https://yaroslavvb.github.io/nn-tensor/slides-llamat.html) —
   "Foundational LLMs for Materials Research" / LLaMat (arXiv:2412.09560): the CPT→IFT→PEFT recipe,
   benchmark results vs GPT-4o/Claude/Gemini, LLaMat-CIF crystal generation, and the

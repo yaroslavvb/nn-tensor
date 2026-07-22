@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" class="slides-root">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GNoME: Scaling Deep Learning for Materials Discovery — an interactive tour</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="slides.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body class="slides-body">
+<style>
+/* deck-local styles (prefixed gn-) */
+.gn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+.gn-arrow { align-self: center; color: var(--muted); font-size: 18px; }
+.gn-stage {
+  flex: 1; min-width: 130px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 8px 12px; cursor: pointer; text-align: left;
+  font-family: inherit; color: var(--ink);
+}
+.gn-stage:hover { border-color: var(--accent); }
+.gn-stage.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.gn-stage h4 { margin: 0 0 3px; font-size: clamp(12px, 1.35vw, 16px); }
+.gn-stage .sub { font-size: clamp(10.5px, 1.05vw, 12.5px); color: var(--muted); }
+.gn-lane { font-size: clamp(11px, 1.15vw, 13.5px); font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .06em; margin: 8px 0 4px; }
+.gn-lane.alt { color: var(--accent-2); }
+.gn-detail { margin-top: 10px; font-size: clamp(12.5px, 1.3vw, 15.5px); line-height: 1.5; color: var(--ink-2); min-height: 5.5em; }
+.gn-detail b { color: var(--ink); }
+.gn-read { margin-top: 8px; font-size: clamp(12px, 1.25vw, 15px); color: var(--ink-2); min-height: 3.0em; line-height: 1.5; }
+.gn-read b { color: var(--ink); }
+.gn-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+.gn-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; }
+.gn-tile b { display: block; font-size: clamp(16px, 2.1vw, 26px); color: var(--accent); line-height: 1.2; }
+.gn-tile span { font-size: clamp(10.5px, 1.1vw, 13px); color: var(--muted); }
+.gn-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 58rem; }
+@media (max-width: 820px) { .gn-map { grid-template-columns: 1fr; } }
+.gn-map .gn-tile b { font-size: clamp(14px, 1.6vw, 20px); color: var(--ink); }
+.gn-map .gn-tile em { color: var(--accent); font-style: normal; font-weight: 800; margin-right: 8px; }
+.gn-ctl { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.gn-big4 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 62rem; }
+@media (max-width: 820px) { .gn-big4 { grid-template-columns: 1fr; } }
+.gn-big4 .gn-tile b { font-size: clamp(28px, 4vw, 54px); }
+.gn-big4 .gn-tile span { font-size: clamp(12px, 1.3vw, 16px); }
+.gn-loopwrap { display: grid; grid-template-columns: 6fr 7fr; gap: 14px; align-items: center; }
+@media (max-width: 820px) { .gn-loopwrap { grid-template-columns: 1fr; } }
+.gn-mini { display: flex; gap: 10px; flex-wrap: wrap; }
+.gn-mini .gn-tile { padding: 5px 10px; }
+.gn-mini .gn-tile b { font-size: clamp(13px, 1.5vw, 19px); }
+</style>
+<main class="deck">
+
+  <!-- 1 · title -->
+  <section class="slide">
+    <div class="kicker">Paper tour · Nature 624, 80–85 · 29 Nov / 7 Dec 2023 · open access</div>
+    <h1>GNoME: Scaling Deep Learning<br>for Materials Discovery</h1>
+    <p>Amil Merchant · Simon Batzner · Samuel S. Schoenholz · Muratahan Aykol · Gowoon Cheon · Ekin Dogus Cubuk</p>
+    <p class="note">Google DeepMind · Google Research — “Graph Networks for Materials Exploration”</p>
+    <p>
+      <span class="pill hot">2.2 million new stable crystals</span>
+      <span class="pill">381,000 on the updated convex hull</span>
+      <span class="pill">six rounds of active learning</span>
+      <span class="pill hot">736 already made in the lab</span>
+    </p>
+    <p class="note">Use ← → (or space / swipe) to navigate. Several slides are interactive — drag sliders, click stages, hover charts.</p>
+  </section>
+
+  <!-- 2 · roadmap -->
+  <section class="slide">
+    <div class="kicker">Roadmap</div>
+    <h2>An interactive tour in six stops</h2>
+    <div class="gn-map">
+      <div class="gn-tile"><b><em>01</em>Why discovery is slow</b><span>trial-and-error, ~48k stable crystals after decades</span></div>
+      <div class="gn-tile"><b><em>02</em>What “stable” means</b><span>convex hulls &amp; decomposition energy — a toy you can drag</span></div>
+      <div class="gn-tile"><b><em>03</em>Candidate generation</b><span>SAPS structural pipeline + compositional / AIRSS pipeline</span></div>
+      <div class="gn-tile"><b><em>04</em>The GNoME models</b><span>graph networks, ensembles, 21 → 11 meV/atom</span></div>
+      <div class="gn-tile"><b><em>05</em>The active-learning flywheel</b><span>generate → filter → DFT → retrain, ×6 rounds</span></div>
+      <div class="gn-tile"><b><em>06</em>Scaling, validation &amp; payoff</b><span>power laws, r²SCAN, learned interatomic potentials</span></div>
+    </div>
+    <div class="src">Interactive slides carry sliders, segmented toggles or clickable stages — try them.</div>
+  </section>
+
+  <!-- 3 · context -->
+  <section class="slide">
+    <div class="kicker">01 · The problem</div>
+    <h2>Decades of effort, ~48,000 stable crystals</h2>
+    <div class="columns-32">
+      <div>
+        <ul>
+          <li class="frag">Experiments over decades catalogued <b>~20,000 computationally stable</b> structures in the ICSD — out of ~200,000 total entries. Costs, throughput and synthesis complications make this route impractical to scale.</li>
+          <li class="frag">First-principles pipelines — Materials Project, OQMD, AFLOWLIB, NOMAD — plus simple ion substitutions improved this to <b>~48,000 computationally stable materials</b> (authors’ recalculation).</li>
+          <li class="frag">Chemical-intuition-guided substitution “fundamentally limited how diverse candidates could be”.</li>
+          <li class="frag">Machine learning had been <b>ineffective at estimating stability</b> — the decomposition energy against the convex hull of competing phases.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="bignum">20k</div>
+        <p class="note">computationally stable crystals in the ICSD (of ~200,000 entries)</p>
+        <div class="bignum" style="color: var(--accent-2)">48k</div>
+        <p class="note">stable materials after a decade of DFT databases + substitutions</p>
+      </div>
+    </div>
+    <div class="src">Source: intro §1 &amp; refs. 15–24; Methods “Snapshots of available datasets”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 4 · headline -->
+  <section class="slide">
+    <div class="kicker">Headline result</div>
+    <h2>An order-of-magnitude expansion in stable materials known to humanity</h2>
+    <div class="gn-big4">
+      <div class="gn-tile frag"><b>2.2 M</b><span>crystal structures found stable with respect to prior work — below the previously known convex hull, “many of which escaped previous human chemical intuition”</span></div>
+      <div class="gn-tile frag"><b style="color: var(--accent-2)">381,000</b><span>of them survive as new entries on the updated, final convex hull — “for a total of 421,000 stable crystals”</span></div>
+      <div class="gn-tile frag"><b style="color: var(--accent-4)">736</b><span>GNoME structures independently realized experimentally by other groups (ICSD matches; 184 since the project began)</span></div>
+      <div class="gn-tile frag"><b style="color: var(--accent-3)">~10⁹</b><span>candidate structures generated and filtered across rounds; hundreds of millions of first-principles calculations power the flywheel</span></div>
+    </div>
+    <p class="note">Fig. 1b shows the jump: external databases crawl upward for years, then GNoME’s bars leap to ~381,000 through 2022–23 — “almost an order of magnitude larger than previous work”.</p>
+    <div class="src">Source: abstract, §1, Fig. 1b, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 5 · convex hull explainer -->
+  <section class="slide">
+    <div class="kicker">02 · What “stable” means</div>
+    <h2>Stability = sitting on the convex hull</h2>
+    <div class="columns">
+      <div>
+        <div class="widgetbox">
+          <div class="gn-ctl">
+            <label class="slider-ctl">composition x(B)
+              <input type="range" id="gn-hull-x" min="5" max="95" value="62">
+              <output id="gn-hull-xo">62%</output>
+            </label>
+            <label class="slider-ctl">energy
+              <input type="range" id="gn-hull-e" min="-550" max="100" value="-150">
+              <output id="gn-hull-eo">−150</output>
+            </label>
+          </div>
+          <div id="gn-hull-chart"></div>
+          <div class="gn-read" id="gn-hull-read"></div>
+        </div>
+      </div>
+      <div>
+        <ul>
+          <li>For each chemical system, plot formation energy vs composition. The <b>lower convex hull</b> of all competing phases is the stability frontier.</li>
+          <li>The <b>decomposition energy</b> \( \Delta E_{\mathrm{d}} = E - E_{\mathrm{hull}} \) is the distance to that hull: on/below → <b>stable</b>; above → decomposes into a mixture of hull phases.</li>
+          <li>GNoME filters with a <b>50 meV/atom</b> threshold on predicted decomposition energy — loose on purpose, to improve <b>recall</b> of stable crystals before DFT.</li>
+          <li>Drag the candidate: push it below the hull and the hull itself updates — that is what each of the 381,000 discoveries did.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="src">Toy A–B system (schematic, not paper data). Threshold &amp; definitions: Methods “Model-based filtration”, “Decomposition energies”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 6 · two pipelines -->
+  <section class="slide">
+    <div class="kicker">03 · Candidate generation</div>
+    <h2>Two pipelines feed the model — click any stage</h2>
+    <div class="widgetbox">
+      <div class="gn-lane">Structural pipeline (knows the crystal)</div>
+      <div class="gn-row">
+        <button class="gn-stage on" id="gn-pipe-0"><h4>Substitutions + SAPS</h4><div class="sub">&gt;10⁹ candidates</div></button>
+        <div class="gn-arrow">→</div>
+        <button class="gn-stage" id="gn-pipe-1"><h4>GNoME filter</h4><div class="sub">ensembles + augmentation</div></button>
+        <div class="gn-arrow">→</div>
+        <button class="gn-stage" id="gn-pipe-2"><h4>Cluster &amp; rank</h4><div class="sub">polymorph dedup</div></button>
+        <div class="gn-arrow">→</div>
+        <button class="gn-stage" id="gn-pipe-3"><h4>DFT verify</h4><div class="sub">VASP · MP settings</div></button>
+      </div>
+      <div class="gn-lane alt">Compositional pipeline (formula only)</div>
+      <div class="gn-row">
+        <button class="gn-stage" id="gn-pipe-4"><h4>Relaxed SMACT</h4><div class="sub">oxidation-state balance</div></button>
+        <div class="gn-arrow">→</div>
+        <button class="gn-stage" id="gn-pipe-5"><h4>Composition GNoME</h4><div class="sub">no structure needed</div></button>
+        <div class="gn-arrow">→</div>
+        <button class="gn-stage" id="gn-pipe-6"><h4>AIRSS ×100</h4><div class="sub">random structures</div></button>
+        <div class="gn-arrow">→</div>
+        <button class="gn-stage" id="gn-pipe-7"><h4>DFT verify</h4><div class="sub">VASP · MP settings</div></button>
+      </div>
+      <div class="gn-detail" id="gn-pipe-detail"></div>
+    </div>
+    <div class="src">Source: Fig. 1a; Methods “SAPS”, “Oxidation-state relaxations”, “AIRSS structure generation”, “Test-time augmentations”, “Deep ensembles”, “Clustered-based reduction”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 7 · the GNoME model -->
+  <section class="slide">
+    <div class="kicker">04 · The models</div>
+    <h2>GNoME: message-passing GNNs that predict energy</h2>
+    <div class="columns">
+      <div>
+        <ul>
+          <li><b>Structural model:</b> atoms = nodes, edges when closer than <b>4.0 Å</b>; 256-dim embeddings, shallow swish MLPs, 3 message-passing steps; messages normalized by the dataset’s average adjacency.</li>
+          <li><b>Compositional model:</b> Roost-style — the reduced formula as a fully connected graph, no structure input.</li>
+          <li><b>Ensembles of n = 10</b> networks; the <b>median</b> is the prediction, the interquartile range bounds uncertainty.</li>
+          <li>Test sets split by a <b>composition hash (85/15)</b> — no composition overlap between train and test.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="widgetbox">
+          <div id="gn-mae-chart"></div>
+          <p class="note">Hover bars. Structural: prior benchmark 28 → 21 on the ~69,000-material 2018 Materials Project snapshot → <b>11 meV/atom</b> after active learning. Compositional: 60 on noisy MP labels → 40 meV/atom when labelled by ≥10 converged AIRSS runs.</p>
+        </div>
+      </div>
+    </div>
+    <div class="src">Source: §“GNoME”; Methods “Graph networks”, “Training structural and composition models”, “Composition-based hashing”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 8 · active learning flywheel -->
+  <section class="slide">
+    <div class="kicker">05 · The centerpiece</div>
+    <h2>The active-learning flywheel — six rounds</h2>
+    <div class="widgetbox">
+      <div class="gn-ctl">
+        <label class="slider-ctl">round
+          <input type="range" id="gn-loop-r" min="1" max="6" value="1">
+        </label>
+        <button class="btn" id="gn-loop-play">▶ run the flywheel</button>
+        <div class="gn-mini">
+          <div class="gn-tile"><b id="gn-loop-round">1 / 6</b><span>round</span></div>
+          <div class="gn-tile"><b id="gn-loop-hs">&lt;6%</b><span>structural hit rate</span></div>
+          <div class="gn-tile"><b id="gn-loop-hc">&lt;3%</b><span>compositional hit rate</span></div>
+          <div class="gn-tile"><b id="gn-loop-mae">21</b><span>MAE, meV/atom</span></div>
+        </div>
+      </div>
+      <div class="gn-loopwrap">
+        <div id="gn-loop-svg"></div>
+        <div id="gn-loop-chart"></div>
+      </div>
+      <div class="gn-read" id="gn-loop-cap"></div>
+    </div>
+    <p class="note">Real anchors: hit rates start below <b>6%</b> (structural) and <b>3%</b> (compositional); after six rounds they reach <b>&gt;80%</b> and <b>33%</b> per 100 trials — vs <b>1%</b> in previous work. Intermediate rounds are not reported; the dashed paths are schematic.</p>
+    <div class="src">Source: §“Active learning”, Fig. 1a,d; Methods “Active learning” (initial discovery rates 3–10% depending on threshold), Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 9 · what was discovered -->
+  <section class="slide">
+    <div class="kicker">06 · Results — the catalogue</div>
+    <h2>Where the discoveries live: 4+ element chemistries</h2>
+    <div class="widgetbox">
+      <div class="gn-ctl">
+        <div class="seg" id="gn-elem-seg">
+          <button class="on" aria-pressed="true">Stable crystals (log scale)</button>
+          <button aria-pressed="false">Distinct prototypes</button>
+        </div>
+        <span class="note">hover bars for counts</span>
+      </div>
+      <div id="gn-elem-chart"></div>
+      <div class="gn-read" id="gn-elem-read"></div>
+    </div>
+    <div class="gn-tiles">
+      <div class="gn-tile"><b>45,500</b><span>novel structural prototypes (XtalFinder)</span></div>
+      <div class="gn-tile"><b>5.6×</b><span>increase over Materials Project’s ~8,000</span></div>
+      <div class="gn-tile"><b>52,000</b><span>layered materials vs ~1,000 from MP alone</span></div>
+    </div>
+    <div class="src">Source: Fig. 2a,c (bar values ≈, read off log axes); §“Discovered stable crystals”, §“Composition families of interest”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 10 · scaling laws & emergence -->
+  <section class="slide">
+    <div class="kicker">06 · Scaling laws</div>
+    <h2>Error falls as a power law — and generalization emerges</h2>
+    <div class="columns">
+      <div>
+        <div class="widgetbox">
+          <div class="gn-ctl">
+            <div class="seg" id="gn-scale-seg">
+              <button class="on" aria-pressed="true">MAE vs training data</button>
+              <button aria-pressed="false">Precision by #elements</button>
+            </div>
+          </div>
+          <div id="gn-scale-chart"></div>
+          <div class="gn-read" id="gn-scale-read"></div>
+        </div>
+      </div>
+      <div>
+        <ul>
+          <li>Test loss “improves as a power law” with data — matching neural scaling laws from language and vision. Unlike language, materials can <b>generate their own new data</b> and keep going.</li>
+          <li><b>Emergent out-of-distribution generalization:</b> models predict structures with <b>5+ unique elements</b> accurately, despite those being omitted from training (it stopped at four).</li>
+          <li>On out-of-domain random-structure-search (AIRSS) inputs — high-energy, off-manifold structures — accuracy still climbs steadily with scale: “a substantial step towards a universal energy predictor”.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="src">Source: Fig. 1d,e (point values ≈, read off log–log axes); §“Scaling laws and generalization”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 11 · validation -->
+  <section class="slide">
+    <div class="kicker">06 · Do the discoveries hold up?</div>
+    <h2>Three independent checks</h2>
+    <ul>
+      <li class="frag"><b>The lab agrees.</b> Candidates derive from March 2021 snapshots; by January 2023 experimentalists had independently made <b>736</b> of GNoME’s structures (<b>184</b> of them after the project began). Of 3,182 compositions newly added to the Materials Project, <b>2,202</b> were already in GNoME — with <b>91%</b> structure agreement.</li>
+      <li class="frag"><b>A better functional agrees.</b> Re-checked with r²SCAN: <b>84%</b> of discovered binaries and ternaries keep negative phase-separation energies (Materials Project manages 90% — at far smaller scale), and <b>86.8%</b> of tested quaternaries stay on the r²SCAN hull.</li>
+      <li class="frag"><b>The distribution agrees.</b> Discovered quaternaries show phase-separation energies distributed like Materials Project’s — “meaningfully stable with respect to competing phases and not just ‘filling’ the convex hull”.</li>
+    </ul>
+    <div class="gn-tiles">
+      <div class="gn-tile frag"><b>736</b><span>experimental matches</span></div>
+      <div class="gn-tile frag"><b>91%</b><span>structure match on new MP entries</span></div>
+      <div class="gn-tile frag"><b>84%</b><span>binaries + ternaries stable under r²SCAN</span></div>
+    </div>
+    <div class="src">Source: §“Validation through experimental matching and r²SCAN”, Fig. 2b,d; Methods “Definition of experimental match”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 12 · interatomic potentials -->
+  <section class="slide">
+    <div class="kicker">06 · Downstream payoff I</div>
+    <h2>A by-product: state-of-the-art interatomic potentials</h2>
+    <div class="columns">
+      <div>
+        <ul>
+          <li>The hundreds of millions of relaxation steps become <b>pretraining data for a NequIP potential</b> (16.24M parameters, JAX): learned forces for molecular dynamics.</li>
+          <li><b>Zero-shot</b> — with no training on any AIMD data — it classifies superionic conductors, handles unseen compositions, melts and vacancies, and outperforms general-purpose potentials.</li>
+          <li>Fast: ~14 ms per step for a 50-atom system on one A100 → ~12 ns/day of 2-fs MD.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="widgetbox">
+          <div class="gn-ctl">
+            <div class="seg" id="gn-mlip-seg">
+              <button class="on" aria-pressed="true">Superionic classif.</button>
+              <button aria-pressed="false">Force MAE</button>
+              <button aria-pressed="false">Zero-shot vs trained</button>
+            </div>
+          </div>
+          <div id="gn-mlip-chart"></div>
+          <div class="gn-read" id="gn-mlip-read"></div>
+        </div>
+      </div>
+    </div>
+    <div class="src">Source: Fig. 3a–d (point values ≈, read off log axes); §“Scaling up learned interatomic potentials”, Methods “Pretrained GNoME potential”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 13 · applications -->
+  <section class="slide">
+    <div class="kicker">06 · Downstream payoff II</div>
+    <h2>Screening the new catalogue</h2>
+    <div class="gn-big4">
+      <div class="gn-tile"><b>52,000</b><span>layered materials (≈1,000 known stable from Materials Project) — candidates for electronics and energy storage</span></div>
+      <div class="gn-tile"><b style="color: var(--accent-2)">528</b><span>promising Li-ion conductors found by re-running a published screening — a 25× increase over the original study</span></div>
+      <div class="gn-tile"><b style="color: var(--accent-4)">+15</b><span>new Li/Mn transition-metal-oxide candidates to replace LiCoO₂ in batteries, vs 9 from Materials Project</span></div>
+      <div class="gn-tile"><b style="color: var(--accent-3)">623</b><span>never-before-seen compositions run through GNoME-potential MD to flag superionic conductors (σ₁₀₀₀ₖ &gt; 101.18 mS cm⁻¹) vs AIMD</span></div>
+    </div>
+    <p class="note">Stable discoveries on the final hull are released to screen for technological applications; AIMD-quality conductivity screening becomes high-throughput because DFT’s cost no longer binds.</p>
+    <div class="src">Source: §“Composition families of interest”, §“Screening solid-state ionic conductors”; Methods “AIMD conductivity experiments”, “Molecular dynamics simulations”, Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 14 · limitations -->
+  <section class="slide">
+    <div class="kicker">Limitations</div>
+    <h2>What the paper itself flags</h2>
+    <ul>
+      <li><b>Stability is not synthesizability.</b> Open problems: “phase transitions through competing polymorphs, dynamic stability arising from vibrational profiles and configurational entropies and, ultimately, synthesizability.”</li>
+      <li><b>The hull is a moving target.</b> GNoME structures “could be bumped off the convex hull by future discoveries” — GNoME itself displaced at least <b>5,000</b> ‘stable’ materials from Materials Project and OQMD.</li>
+      <li><b>Functional choice matters.</b> PBE traded accuracy for speed; 16% of binaries/ternaries lose stability under r²SCAN, and PBE–r²SCAN discrepancies remain to be analysed.</li>
+      <li><b>Simplifications:</b> ferromagnetic spin initialization only (other orderings were computationally prohibitive); for some compositions most AIRSS initializations fail to converge — “why” is unresolved future work.</li>
+      <li><b>Frozen snapshots:</b> candidates built off March/June 2021 databases; concurrent efforts grew external counts only 35,000 → 48,000 by 2023 (small vs 381,000).</li>
+    </ul>
+    <div class="src">Source: Conclusion; §“Discovered stable crystals”; Methods “Snapshots”, “VASP calculations”, “AIRSS structure generation”; Supplementary Notes 1–2 (as referenced), Nature s41586-023-06735-9.</div>
+  </section>
+
+  <!-- 15 · takeaways -->
+  <section class="slide">
+    <div class="kicker">Takeaways</div>
+    <h2>Three things to remember</h2>
+    <ul>
+      <li><b>Discovery is a flywheel, not a filter.</b> Generate diversely (SAPS + compositions), filter with GNN ensembles, verify with DFT, retrain — six rounds took hit rates from &lt;6% to &gt;80% and MAE from 21 to 11 meV/atom, yielding 2.2M stable structures and 381,000 hull entries — an order-of-magnitude expansion.</li>
+      <li><b>Scaling laws work in materials too — with a twist.</b> Error falls as a power law with data, and unlike language, the pipeline can manufacture its own new data; generalization to 5+-element chemistries emerges without being trained.</li>
+      <li><b>The data is the second product.</b> Relaxation trajectories pretrain interatomic potentials that run zero-shot MD, screen ionic conductors at AIMD fidelity, and point “towards a universal energy predictor”.</li>
+    </ul>
+    <p>
+      <a class="pill hot" href="https://www.nature.com/articles/s41586-023-06735-9">Nature s41586-023-06735-9</a>
+      <a class="pill" href="https://github.com/google-deepmind/materials_discovery">github.com/google-deepmind/materials_discovery</a>
+      <a class="pill" href="index.html">← back to the nn-tensor tutorial</a>
+    </p>
+    <div class="src">Deck data: Figs. 1–3, Methods. Values read off figures are marked ≈; schematic widgets are labelled as such.</div>
+  </section>
+
+</main>
+<div class="deck-chrome">
+  <span class="deck-title"><a href="index.html">🧊 nn-tensor</a> / GNoME</span>
+  <div class="deck-progress"><div id="deck-fill"></div></div>
+  <span id="deck-counter">1 / 15</span>
+  <span class="deck-hint">← → to navigate</span>
+  <button class="deck-btn" id="deck-prev" aria-label="previous slide">←</button>
+  <button class="deck-btn" id="deck-next" aria-label="next slide">→</button>
+</div>
+<script src="lib.js"></script>
+<script src="slides.js"></script>
+<script src="slides-gnome.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ], throwOnError: false });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>
