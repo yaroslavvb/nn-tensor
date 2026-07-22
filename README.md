@@ -53,7 +53,12 @@ lemma, a "chain of links" worked example whose crossing unfolding is a giant ide
 live ALS fits that land exactly on the theoretical error curve √((2^d−R)/2^d), and the
 Khrulkov–Novikov–Oseledets / Cohen–Sharir–Shashua depth-separation theorems.
 
-There are also two **interactive paper slide decks** (arrow keys / swipe to navigate) built on a
+There is a **[curated learning path for generative AI in materials science](https://yaroslavvb.github.io/nn-tensor/resources.html)**
+([resources.html](https://yaroslavvb.github.io/nn-tensor/resources.html)) — verified external
+tutorials, video lectures, courses, slide decks, papers, and hands-on notebooks, organized as a
+reading order, with type filters; it also links all the paper decks below.
+
+There are also **interactive paper slide decks** (arrow keys / swipe to navigate) built on a
 shared deck framework (slides.css + slides.js):
 
 - [slides-crystal-genai.html](https://yaroslavvb.github.io/nn-tensor/slides-crystal-genai.html) —

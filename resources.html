@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generative AI for Materials — a Curated Learning Path</title>
+<meta name="description" content="A verified, curated collection of tutorials, video lectures, courses, slide decks, papers, and hands-on notebooks for learning generative modeling for materials science — plus interactive paper decks built on this site.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+<style>
+  .res-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--page); margin: 10px 0; }
+  .res-card h4 { margin: 0 0 4px; font-size: 16.5px; }
+  .res-card .meta { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .res-card p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .res-card .vnote { font-size: 12px; color: var(--muted); margin-top: 6px; border-top: 1px dashed var(--grid); padding-top: 6px; }
+  .typepill {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    border-radius: 999px; padding: 2px 9px; margin-right: 8px; vertical-align: 2px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
+  }
+  .typepill.video { border-color: var(--accent); color: var(--accent); }
+  .typepill.course { border-color: var(--accent-2); color: var(--accent-2); }
+  .typepill.slides { border-color: var(--accent-3); color: var(--accent-3); }
+  .typepill.paper { border-color: var(--accent-5); color: var(--accent-5); }
+  .typepill.handson { border-color: var(--accent-4); color: var(--accent-4); }
+  .typepill.deck { border-color: var(--neg); color: var(--neg); }
+  .verified { color: var(--good); font-weight: 700; font-size: 12px; }
+  .unverified { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .stepnum {
+    display: inline-flex; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 13px; margin-right: 10px;
+  }
+</style>
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="nav-inner">
+    <span class="nav-brand"><a href="index.html" style="text-decoration:none;color:inherit">🧊 nn-tensor</a> <span style="color:var(--muted);font-weight:400">/ resources</span></span>
+    <div class="nav-links" id="navlinks">
+      <a href="#sec-decks">Our decks</a>
+      <a href="#sec-start">Start here</a>
+      <a href="#sec-videos">Videos</a>
+      <a href="#sec-papers">Papers</a>
+      <a href="#sec-handson">Hands-on</a>
+      <a href="#sec-prereq">Prerequisites</a>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressbar"></div></div>
+</nav>
+
+<header class="hero">
+  <h1>Generative AI for Materials: <em>a Curated Learning Path</em></h1>
+  <p class="hero-sub">Tutorials, video lectures, courses, slide decks, papers, and hands-on
+  notebooks for getting the background in generative modeling for materials science — ordered as a
+  learning path. Every link marked <span class="verified">✓ verified</span> was fetched and
+  content-checked on 2026-07-22; a few promising extras are listed as
+  <span class="unverified">link-checked</span>.</p>
+  <p class="hero-cite">Companion to the interactive paper decks and tutorials on this site
+  (<a href="index.html">nn-tensor</a>).</p>
+  <div class="controls" style="margin-top:14px">
+    <span class="ctl-label">Filter:</span>
+    <div class="seg" id="res-filter" role="group" aria-label="resource type filter">
+      <button data-f="all" class="on" aria-pressed="true">all</button>
+      <button data-f="video" aria-pressed="false">videos</button>
+      <button data-f="course" aria-pressed="false">courses</button>
+      <button data-f="slides" aria-pressed="false">slides</button>
+      <button data-f="paper" aria-pressed="false">papers</button>
+      <button data-f="handson" aria-pressed="false">hands-on</button>
+      <button data-f="deck" aria-pressed="false">our decks</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================================================= -->
+<section id="sec-decks" class="step">
+  <div class="step-tag">On this site</div>
+  <h2>The interactive paper decks (start or finish with these)</h2>
+  <p>Three slide-deck walkthroughs built from the primary papers, with live widgets and every
+  number extracted from the source (← → to navigate):</p>
+
+  <div class="res-card" data-type="deck">
+    <h4><span class="typepill deck">deck</span><a href="slides-crystal-genai.html">Generative AI for Crystal Structures — an interactive tour</a></h4>
+    <div class="meta">17 slides · from De Breuck, Wang, Rignanese, Botti &amp; Marques, <a href="https://arxiv.org/abs/2509.02723">arXiv:2509.02723</a> (review)</div>
+    <p>The field map: CSP-vs-generative paradigm, representations &amp; invariances, the
+    architecture zoo, an explorable catalog of all 61 models from the paper's taxonomy, datasets,
+    metrics, and headline generated-materials results.</p>
+  </div>
+  <div class="res-card" data-type="deck">
+    <h4><span class="typepill deck">deck</span><a href="slides-gnome.html">GNoME: Scaling Deep Learning for Materials Discovery</a></h4>
+    <div class="meta">15 slides · from Merchant et al., <a href="https://www.nature.com/articles/s41586-023-06735-9">Nature 623, 80–85 (2023)</a></div>
+    <p>The scaled-screening flagship: 2.2M new stable structures, a draggable convex-hull
+    explainer, the SAPS + compositional pipelines, the active-learning flywheel animated with the
+    paper's real hit-rate gains, scaling laws, and the zero-shot pretrained potential.</p>
+  </div>
+  <div class="res-card" data-type="deck">
+    <h4><span class="typepill deck">deck</span><a href="slides-llamat.html">LLaMat: Foundational LLMs for Materials Research</a></h4>
+    <div class="meta">16 slides · from Mishra et al., <a href="https://arxiv.org/abs/2412.09560">arXiv:2412.09560</a></div>
+    <p>The LLM route: CPT → IFT → PEFT on 31.5B tokens, materials-NLP and table-extraction
+    benchmarks vs GPT-4o/Claude/Gemini, LLaMat-CIF crystal generation, and the adaptation-rigidity
+    finding.</p>
+  </div>
+
+  <p class="note" style="margin-top:12px">Also on this site, for the mathematical backbone of
+  low-rank structure: the <a href="index.html">tensor-decompositions tutorial</a>, the
+  <a href="depth.html">CP-vs-TT depth-separation deep dive</a>, the
+  <a href="worstcase.html">worst-case approximation report</a>, the
+  <a href="gaussian.html">Gaussian-noise page</a>, and the <a href="angle.html">angular-error page</a>.</p>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-start" class="step">
+  <div class="step-tag">Step 1</div>
+  <h2>Start here: the background course &amp; the decks to flip through</h2>
+
+  <div class="res-card" data-type="course">
+    <h4><span class="stepnum">1</span><span class="typepill course">course</span><a href="https://aronwalsh.github.io/MLforMaterials">Machine Learning for Materials — Aron Walsh (Imperial College, MATE70026)</a></h4>
+    <div class="meta">Jupyter-book course · updated yearly · <a href="https://github.com/aronwalsh/MLforMaterials">GitHub</a> · <span class="verified">✓ verified</span></div>
+    <p>The single best public materials-ML course: ~10 modules of notebooks (CC-licensed) covering
+    materials data, crystal representations, property prediction, through generative AI and LLMs —
+    exactly the prerequisite layer under CDVAE/MatterGen-era work.</p>
+    <div class="vnote">Verified: 9+ notebook lectures publicly available, Colab/Binder-ready, slides linked per lecture.</div>
+  </div>
+  <div class="res-card" data-type="slides">
+    <h4><span class="stepnum">2</span><span class="typepill slides">slides</span><a href="https://speakerdeck.com/aronwalsh/machine-learning-for-materials-lecture-9">Lecture 9: Generative Artificial Intelligence (slide deck)</a></h4>
+    <div class="meta">Aron Walsh · Speaker Deck · <span class="verified">✓ verified</span></div>
+    <p>The flip-through introduction: autoencoders/VAEs, denoising diffusion, LLMs for crystals
+    (CrystaLLM), and property-conditioned generation in ~40 slides.</p>
+  </div>
+  <div class="res-card" data-type="slides">
+    <h4><span class="stepnum">3</span><span class="typepill slides">slides</span><a href="https://camml.ac.uk/pdf/generaiive_ml.pdf">Generative ML — Keith Butler (CaMML School deck, PDF)</a></h4>
+    <div class="meta">Keith Butler (UCL) · 47 slides · <span class="verified">✓ verified</span></div>
+    <p>Sequence models → VAEs → GANs → diffusion → transformer/CrystaLLM crystal generation, from
+    the UK Chemistry &amp; Materials ML school.</p>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-videos" class="step">
+  <div class="step-tag">Step 2</div>
+  <h2>Video lectures — the field's own authors</h2>
+
+  <div class="res-card" data-type="video">
+    <h4><span class="stepnum">4</span><span class="typepill video">video</span><a href="https://www.youtube.com/watch?v=yzFZ157X4HU">Tian Xie — Rethinking Materials Discovery with Generative Models</a></h4>
+    <div class="meta">Isaac Newton Institute · 43 min · 2022 · <span class="verified">✓ verified</span></div>
+    <p>The best single bridge lecture: crystal representations, periodic/SE(3) invariances, and why
+    the CDVAE-era VAE+diffusion design beat earlier GAN/voxel approaches.</p>
+  </div>
+  <div class="res-card" data-type="video">
+    <h4><span class="stepnum">5</span><span class="typepill video">video</span><a href="https://www.youtube.com/watch?v=Smz1go6_Spo">Tian Xie — MatterGen: a generative model for inorganic materials design</a></h4>
+    <div class="meta">Materials Project Seminar · 1 h 21 min · 2024 · <span class="verified">✓ verified</span></div>
+    <p>The canonical deep-dive on joint diffusion over atom types, coordinates, and lattice, with
+    property-conditioned generation. A shorter 55-min version:
+    <a href="https://www.youtube.com/watch?v=yKJQJDehrko">Imperial College ML seminar</a>
+    <span class="verified">✓</span>.</p>
+  </div>
+  <div class="res-card" data-type="video">
+    <h4><span class="stepnum">6</span><span class="typepill video">video</span><a href="https://www.youtube.com/watch?v=8LCuMZtnBlY">Ekin Dogus Cubuk — Scaling up material discovery via deep learning</a></h4>
+    <div class="meta">Materials Project Seminar · 2022 · <span class="verified">✓ verified</span></div>
+    <p>The GNoME line from its lead author: graph-network stability prediction, active-learning
+    loops over DFT, and scaling. Pairs with our <a href="slides-gnome.html">GNoME deck</a>.</p>
+  </div>
+  <div class="res-card" data-type="video">
+    <h4><span class="typepill video">video</span><a href="https://www.youtube.com/playlist?list=PLTjFYVNE7LThgkW_ILVhObV9v_FCgZ-zx">Materials Project Seminar Series (playlist)</a></h4>
+    <div class="meta">LBNL · ongoing · <span class="verified">✓ verified</span></div>
+    <p>The closest thing to a public "generative models for crystals" lecture series — research
+    seminars by the papers' authors, including the MatterGen talk above.</p>
+  </div>
+  <div class="res-card" data-type="video">
+    <h4><span class="typepill video">video</span><a href="https://www.youtube.com/watch?v=hGDN5-NX6n0">Tian Xie — Accelerating materials design with crystal graph neural networks</a></h4>
+    <div class="meta">ICBS 2024 · <span class="verified">✓ verified</span></div>
+    <p>The CGCNN-to-generative arc in one talk — good compressed history of the representation side.</p>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-papers" class="step">
+  <div class="step-tag">Step 3</div>
+  <h2>Tutorial-grade papers, in reading order</h2>
+
+  <div class="res-card" data-type="paper">
+    <h4><span class="stepnum">7</span><span class="typepill paper">paper</span><a href="https://doi.org/10.1016/j.matt.2024.05.017">Has generative artificial intelligence solved inverse materials design?</a></h4>
+    <div class="meta">Park, Li &amp; Walsh · Matter (Cell Press) 2024 · open access · <span class="verified">✓ verified</span></div>
+    <p>Compact expert-level review of the whole generative-crystal arc — GANs/VAEs through
+    autoregressive and diffusion — focused on representations and evaluation.</p>
+  </div>
+  <div class="res-card" data-type="paper">
+    <h4><span class="stepnum">8</span><span class="typepill paper">paper</span><a href="https://arxiv.org/abs/2110.06197">CDVAE: Crystal Diffusion Variational Autoencoder</a></h4>
+    <div class="meta">Xie, Fu, Ganea, Barzilay, Jaakkola · ICLR 2022 · <span class="verified">✓ verified</span></div>
+    <p>The pedagogically cleanest origin paper: why periodicity + invariances make crystal
+    generation hard and how a VAE+diffusion hybrid handles it. Everything since defines itself
+    against it.</p>
+  </div>
+  <div class="res-card" data-type="paper">
+    <h4><span class="stepnum">9</span><span class="typepill paper">paper</span><a href="https://arxiv.org/abs/2309.04475">DiffCSP: Crystal Structure Prediction by Joint Equivariant Diffusion</a></h4>
+    <div class="meta">Jiao et al. · NeurIPS 2023 · <span class="verified">✓ verified</span></div>
+    <p>Full periodic-E(3) equivariant diffusion over lattice + fractional coordinates — the modern
+    template.</p>
+  </div>
+  <div class="res-card" data-type="paper">
+    <h4><span class="stepnum">10</span><span class="typepill paper">paper</span><a href="https://arxiv.org/abs/2312.07511">A Hitchhiker's Guide to Geometric GNNs for 3D Atomic Systems</a></h4>
+    <div class="meta">Duval, Mathis, Joshi, …, Bengio, Bronstein · 2023–24 · <span class="verified">✓ verified</span></div>
+    <p>Explicitly pedagogical guide to the invariant/equivariant architectures every crystal
+    generative model builds on. Complement:
+    <a href="https://www.nature.com/articles/s43246-022-00315-6">Reiser et al., GNNs for materials
+    science and chemistry</a> <span class="verified">✓</span>.</p>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-handson" class="step">
+  <div class="step-tag">Step 4</div>
+  <h2>Hands-on: run the models</h2>
+
+  <div class="res-card" data-type="handson">
+    <h4><span class="stepnum">11</span><span class="typepill handson">hands-on</span><a href="https://workshop.camml.ac.uk">CaMML School training material</a></h4>
+    <div class="meta">CaMML / CECAM 2025 · five days of notebooks · <span class="verified">✓ verified</span></div>
+    <p>Day 5 is literally this topic: a minimal diffusion model from scratch, DDPM/score-based
+    theory, then crystal generation with pretrained MatterGen and Chemeleon — after GNN and MLIP
+    background days.</p>
+  </div>
+  <div class="res-card" data-type="handson">
+    <h4><span class="stepnum">12</span><span class="typepill handson">hands-on</span><a href="https://github.com/microsoft/mattergen">MatterGen — official implementation</a></h4>
+    <div class="meta">Microsoft Research AI4Science · Nature 2025 · <span class="verified">✓ verified</span></div>
+    <p>The reference modern crystal-diffusion codebase: one-line conditional/unconditional
+    generation from pretrained checkpoints, fine-tuning recipes, evaluation notebooks.</p>
+  </div>
+  <div class="res-card" data-type="handson">
+    <h4><span class="typepill handson">hands-on</span><a href="https://github.com/materialsproject/workshop">The Materials Project Workshop curriculum</a></h4>
+    <div class="meta">LBNL · 8 notebook lessons · <span class="verified">✓ verified</span></div>
+    <p>pymatgen / Materials-API / matminer fundamentals — the tooling layer for everything above.</p>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<section id="sec-prereq" class="step">
+  <div class="step-tag">Optional</div>
+  <h2>Deeper prerequisites &amp; unverified extras</h2>
+
+  <div class="res-card" data-type="course">
+    <h4><span class="typepill course">course</span><a href="https://symm4ml.mit.edu">Symmetry and its Application to Machine Learning (MIT, Tess Smidt)</a></h4>
+    <div class="meta">MIT 6.7970/8.750 · 40+ Colabs · <span class="verified">✓ verified</span></div>
+    <p>Group representations and equivariant networks from the e3nn lineage — the deepest route to
+    the symmetry prerequisites.</p>
+  </div>
+  <div class="res-card" data-type="course">
+    <h4><span class="typepill course">course</span><a href="https://github.com/coleygroup/ML4MolEng">Machine Learning for Molecular Engineering (MIT)</a></h4>
+    <div class="meta">Coley, Gómez-Bombarelli, et al. · <span class="verified">✓ verified</span></div>
+    <p>Problem-set-driven MIT course spanning ML for molecules and materials.</p>
+  </div>
+  <div class="res-card" data-type="course">
+    <h4><span class="typepill course">course</span><a href="https://github.com/schwallergroup/ai4chem_course">AI for Chemistry (EPFL CH-457, Schwaller)</a></h4>
+    <div class="meta">12-week Colab curriculum · <span class="verified">✓ verified</span></div>
+    <p>The molecule-side counterpart: SMILES-LSTM/VAE generative models, reaction prediction,
+    Bayesian optimization.</p>
+  </div>
+
+  <h3 class="subhead">Promising extras (link-checked only)</h3>
+  <p class="note">Found in the sweep; links confirmed live (HTTP 200) but content not independently spot-checked like the entries above:</p>
+  <div class="res-card" data-type="handson">
+    <h4><span class="typepill handson">hands-on</span><a href="https://github.com/lantunes/CrystaLLM">CrystaLLM — official repo</a> <span class="unverified">link-checked</span></h4>
+    <p>GPT-2-style LLM over CIF files with pretrained models.</p>
+  </div>
+  <div class="res-card" data-type="course">
+    <h4><span class="typepill course">course</span><a href="https://dmol.pub">Deep Learning for Molecules &amp; Materials (dmol.pub)</a> <span class="unverified">link-checked</span></h4>
+    <p>Interactive open textbook with runnable code, including generative chapters.</p>
+  </div>
+  <div class="res-card" data-type="slides">
+    <h4><span class="typepill slides">slides</span><a href="https://blondegeek.github.io/e3nn_tutorial">e3nn — E(3) equivariant neural network tutorial slides</a> <span class="unverified">link-checked</span></h4>
+    <p>The classic equivariance tutorial by Tess Smidt.</p>
+  </div>
+  <div class="res-card" data-type="handson">
+    <h4><span class="typepill handson">hands-on</span><a href="https://github.com/JARVIS-Materials-Design/jarvis-tools-notebooks">JARVIS-Tools notebooks</a> <span class="unverified">link-checked</span></h4>
+    <p>80+ Colab tutorials for materials AI (ALIGNN, AtomGPT inverse design, ChemNLP).</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Part of the <a href="index.html">nn-tensor interactive tutorial site</a>. Links verified by
+  automated fetch + content check on 2026-07-22; availability of external resources may change.
+  Built with Claude.</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // type filter
+  var seg = document.getElementById("res-filter");
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".res-card"));
+  seg.addEventListener("click", function (e) {
+    var btn = e.target.closest("button");
+    if (!btn) return;
+    seg.querySelectorAll("button").forEach(function (b) { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); });
+    btn.classList.add("on");
+    btn.setAttribute("aria-pressed", "true");
+    var f = btn.dataset.f;
+    cards.forEach(function (c) { c.style.display = (f === "all" || c.dataset.type === f) ? "" : "none"; });
+  });
+  // progress bar + scrollspy (same pattern as sibling pages)
+  var bar = document.getElementById("progressbar");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#navlinks a"));
+  var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+  function onScroll() {
+    var doc = document.documentElement;
+    bar.style.width = (doc.scrollTop / Math.max(1, doc.scrollHeight - doc.clientHeight) * 100).toFixed(2) + "%";
+    var active = 0;
+    secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < 140) active = i; });
+    links.forEach(function (a, i) { a.classList.toggle("active", i === active); });
+  }
+  document.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
