@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" class="slides-root">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLaMat: Foundational LLMs for Materials Research — an interactive tour</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="slides.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+</head>
+<body class="slides-body">
+<style>
+/* deck-local styles (prefixed lm-) */
+.lm-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+.lm-arrow { align-self: center; color: var(--muted); font-size: 20px; }
+.lm-stage {
+  flex: 1; min-width: 150px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; cursor: pointer; text-align: left;
+  font-family: inherit; color: var(--ink);
+}
+.lm-stage:hover { border-color: var(--accent); }
+.lm-stage.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.lm-stage h4 { margin: 0 0 4px; font-size: clamp(13px, 1.5vw, 18px); }
+.lm-stage .sub { font-size: clamp(11px, 1.15vw, 13.5px); color: var(--muted); }
+.lm-stage.lm-static { cursor: default; }
+.lm-stage.lm-static:hover { border-color: var(--border); }
+.lm-detail { margin-top: 12px; font-size: clamp(12.5px, 1.35vw, 16px); line-height: 1.55; color: var(--ink-2); min-height: 6.6em; }
+.lm-detail b { color: var(--ink); }
+.lm-mixbar { display: flex; height: 56px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.lm-mixbar .lm-segp { position: relative; transition: width .4s ease; min-width: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.lm-mixbar .lm-segp:hover { filter: brightness(1.12); }
+.lm-mixbar .lm-segp span { font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; }
+.lm-read { margin-top: 10px; font-size: clamp(12.5px, 1.3vw, 15.5px); color: var(--ink-2); min-height: 3.2em; line-height: 1.5; }
+.lm-read b { color: var(--ink); }
+.lm-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+.lm-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; }
+.lm-tile b { display: block; font-size: clamp(16px, 2.1vw, 26px); color: var(--accent); line-height: 1.2; }
+.lm-tile span { font-size: clamp(10.5px, 1.1vw, 13px); color: var(--muted); }
+.lm-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 58rem; }
+@media (max-width: 820px) { .lm-map { grid-template-columns: 1fr; } }
+.lm-map .lm-tile b { font-size: clamp(14px, 1.6vw, 20px); color: var(--ink); }
+.lm-map .lm-tile em { color: var(--accent); font-style: normal; font-weight: 800; margin-right: 8px; }
+.lm-pt { display: grid; grid-template-columns: repeat(18, 1fr); grid-template-rows: repeat(7, auto) 8px repeat(2, auto); gap: 2px; max-width: 620px; }
+.lm-el { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: clamp(7px, 0.85vw, 11px); font-weight: 600; color: var(--ink-2); cursor: default; }
+.lm-el:hover { outline: 2px solid var(--accent-3); }
+.lm-ctl { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.lm-family { display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; gap: 8px; align-items: center; max-width: 60rem; }
+.lm-family .lm-arrow { text-align: center; }
+</style>
+<main class="deck">
+
+  <!-- 1 · title -->
+  <section class="slide">
+    <div class="kicker">Paper tour · arXiv:2412.09560 · v2, Jan 2025</div>
+    <h1>LLaMat: Foundational LLMs<br>for Materials Research</h1>
+    <p>Vaibhav Mishra · Somaditya Singh · Dhruv Ahlawat · Mohd Zaki · Vaibhav Bihani ·<br>
+       Hargun Singh Grover · Biswajit Mishra · Santiago Miret · Mausam · N. M. Anoop Krishnan</p>
+    <p class="note">IIT Delhi · Cerebras Systems · Intel Labs</p>
+    <p>
+      <span class="pill hot">continued pretraining on ~30B MatSci tokens</span>
+      <span class="pill">LLaMA-2-7B &amp; LLaMA-3-8B</span>
+      <span class="pill">materials copilot + crystal generator</span>
+      <span class="pill hot">headline: “adaptation rigidity”</span>
+    </p>
+    <p class="note">Use ← → (or space / swipe) to navigate. Charts are interactive — hover and toggle.</p>
+  </section>
+
+  <!-- 2 · roadmap -->
+  <section class="slide">
+    <div class="kicker">Roadmap</div>
+    <h2>An interactive tour in six stops</h2>
+    <div class="lm-map">
+      <div class="lm-tile"><b><em>01</em>Why materials LLMs</b><span>6M+ papers, and general LLMs stumble on domain physics</span></div>
+      <div class="lm-tile"><b><em>02</em>The three-stage recipe</b><span>CPT on R2CID → instruction finetuning → task / PEFT</span></div>
+      <div class="lm-tile"><b><em>03</em>The model family</b><span>LLaMat-2 / LLaMat-3 → -Chat and -CIF variants</span></div>
+      <div class="lm-tile"><b><em>04</em>Benchmarks</b><span>materials NLP + structured extraction vs LLaMA, GPT-4, Claude, Gemini</span></div>
+      <div class="lm-tile"><b><em>05</em>Crystal generation</b><span>LLaMat-CIF: validity, coverage, stability, periodic-table reach</span></div>
+      <div class="lm-tile"><b><em>06</em>Adaptation rigidity</b><span>the weaker base model wins — and what that implies</span></div>
+    </div>
+    <div class="src">Interactive slides carry a toggle (segmented buttons) or a slider — try them.</div>
+  </section>
+
+  <!-- 3 · motivation -->
+  <section class="slide">
+    <div class="kicker">01 · Motivation</div>
+    <h2>Materials science is drowning in its own literature</h2>
+    <div class="columns-32">
+      <div>
+        <ul>
+          <li class="frag">Materials innovation touches <b>10 of 17</b> UN Sustainable Development Goals — but insight is buried in <b>unstructured text and semi-structured tables</b>.</li>
+          <li class="frag">General LLMs misread <b>physical laws, specialized terminology, crystal structures</b> — critical analyses find them unreliable for real materials discovery.</li>
+          <li class="frag">Proprietary frontier models are costly to run over <b>millions of articles</b> — deployable open models are needed.</li>
+          <li class="frag">Prior finetunes solved single tasks; LLaMat aims at <b>one foundation</b>: NLP + extraction + crystal generation.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="bignum">6M+</div>
+        <p class="note">materials science publications and counting</p>
+        <div class="bignum" style="color: var(--accent-2)">4M</div>
+        <p class="note">full-text papers curated into LLaMat’s pretraining corpus</p>
+      </div>
+    </div>
+    <div class="src">Source: §1–§2.1, arXiv:2412.09560.</div>
+  </section>
+
+  <!-- 4 · recipe (interactive pipeline) -->
+  <section class="slide">
+    <div class="kicker">02 · Recipe</div>
+    <h2>Three stages — click each one</h2>
+    <div class="widgetbox">
+      <div class="lm-row">
+        <button class="lm-stage on" id="lm-pipe-0"><h4>① Continued pretraining</h4><div class="sub">R2CID corpus · ~30B tokens</div></button>
+        <div class="lm-arrow">→</div>
+        <button class="lm-stage" id="lm-pipe-1"><h4>② Instruction finetuning</h4><div class="sub">tri-phase: Orca → MathQA → MatSci</div></button>
+        <div class="lm-arrow">→</div>
+        <button class="lm-stage" id="lm-pipe-2"><h4>③ Task finetuning / PEFT</h4><div class="sub">-Chat copilot · -CIF crystal generator</div></button>
+      </div>
+      <div class="lm-detail" id="lm-pipe-detail"></div>
+    </div>
+    <div class="src">Source: Fig. 1, §4.1–4.2, App. C.3 (hardware), Table A.1 (dataset sizes).</div>
+  </section>
+
+  <!-- 5 · data mix -->
+  <section class="slide">
+    <div class="kicker">02 · Recipe — the data</div>
+    <h2>R2CID: 94% papers, but the small slices matter</h2>
+    <div class="widgetbox">
+      <div class="lm-ctl">
+        <div class="seg" id="lm-mix-seg">
+          <button class="on" aria-pressed="true">True scale</button>
+          <button aria-pressed="false">Magnify small slices</button>
+        </div>
+        <span class="note">hover / tap a slice</span>
+      </div>
+      <div class="lm-mixbar" id="lm-mix-bar" aria-label="pretraining data mix"></div>
+      <div class="lm-read" id="lm-mix-read"></div>
+    </div>
+    <ul>
+      <li>Papers interleaved with RedPajama at <b>100M : 2.4M</b> tokens — replay against catastrophic forgetting.</li>
+      <li>CIF crystal files concentrated in the <b>final 10%</b> of pretraining.</li>
+      <li>Totals: <b>31.5B</b> train tokens for LLaMat-2, <b>10.9B</b> for LLaMat-3.</li>
+    </ul>
+    <div class="src">Source: Fig. 1 (pie), Table D.1, §4.1.1.</div>
+  </section>
+
+  <!-- 6 · model family -->
+  <section class="slide">
+    <div class="kicker">03 · Family</div>
+    <h2>Two lineages, four deployable models</h2>
+    <div class="lm-family">
+      <div class="lm-stage lm-static"><h4>LLaMA-2-7B</h4><div class="sub">base · SentencePiece tok.</div></div>
+      <div class="lm-arrow">→</div>
+      <div class="lm-stage lm-static"><h4>LLaMat-2</h4><div class="sub">CPT: 8×A100, ~17 days</div></div>
+      <div class="lm-arrow">→</div>
+      <div class="lm-stage lm-static"><h4>LLaMat-2-Chat · LLaMat-2-CIF</h4><div class="sub">copilot · crystal generator</div></div>
+      <div class="lm-stage lm-static"><h4>LLaMA-3-8B</h4><div class="sub">base · TikToken tok.</div></div>
+      <div class="lm-arrow">→</div>
+      <div class="lm-stage lm-static"><h4>LLaMat-3</h4><div class="sub">CPT: 2× Cerebras CS-2, ~3 days</div></div>
+      <div class="lm-arrow">→</div>
+      <div class="lm-stage lm-static"><h4>LLaMat-3-Chat · LLaMat-3-CIF</h4><div class="sub">same recipe, different fate</div></div>
+    </div>
+    <ul style="margin-top: 2vh">
+      <li>Why 7–8B? Balance of <b>training cost, available domain data, and deployability</b> for the materials community.</li>
+      <li>English is preserved: mean English micro-F1 <b>87.9</b> (LLaMat-2-chat) vs 87.3–88.1 for LLaMA-2 variants.</li>
+    </ul>
+    <div class="src">Source: Fig. 1, §2.1, App. A.2 &amp; C.3; English scores Table E.1.</div>
+  </section>
+
+  <!-- 7 · MatNLP -->
+  <section class="slide">
+    <div class="kicker">04 · Benchmarks — materials NLP</div>
+    <h2>MatNLP: LLaMat beats finetuned LLaMA <em>and</em> frontier models</h2>
+    <div class="widgetbox">
+      <div class="lm-ctl">
+        <div class="seg" id="lm-nlp-seg">
+          <button class="on" aria-pressed="true">Mean micro-F1</button>
+          <button aria-pressed="false">Mean macro-F1</button>
+          <button aria-pressed="false">Selected tasks</button>
+        </div>
+      </div>
+      <div id="lm-nlp-chart"></div>
+    </div>
+    <p class="note">14 tasks (NER, relation &amp; event extraction, classification), 14,579 test instances. “-FT” = LLaMA finetuned on the same downstream training sets — so the gap is what CPT adds. Closed-source models evaluated at temperature 0.</p>
+    <div class="src">Source: Tables E.1–E.2 (mean rows, per-task micro-F1), Fig. 2.</div>
+  </section>
+
+  <!-- 8 · SIE text -->
+  <section class="slide">
+    <div class="kicker">04 · Benchmarks — extraction from text</div>
+    <h2>Structured extraction: text → JSON schemas</h2>
+    <div class="widgetbox">
+      <div class="lm-ctl">
+        <div class="seg" id="lm-sie-seg">
+          <button class="on" aria-pressed="true">Doping: F1 by task</button>
+          <button aria-pressed="false">Doping: full-record exact match</button>
+        </div>
+      </div>
+      <div id="lm-sie-chart"></div>
+    </div>
+    <ul>
+      <li>Nine tasks over doping, MOFs, general materials — answers must <b>parse as JSON</b> against a fixed schema.</li>
+      <li>LLaMat-chat models are strongest on <b>host–dopant</b> and formula–application relations; MOFs stay hard for everyone (best exact match just 0.118, tied by LLaMat-2-chat and finetuned LLaMA baselines).</li>
+    </ul>
+    <div class="src">Source: Tables E.1–E.2 (SIE Doping / MOFs), Fig. 3a–b, §4.1.4.</div>
+  </section>
+
+  <!-- 9 · tables / DiSCoMaT -->
+  <section class="slide">
+    <div class="kicker">04 · Benchmarks — extraction from tables</div>
+    <h2>DiSCoMaT: 737 real composition tables → JSON</h2>
+    <div class="widgetbox">
+      <div class="lm-ctl">
+        <div class="seg" id="lm-tab-seg">
+          <button class="on" aria-pressed="true">Per-task accuracy</button>
+          <button aria-pressed="false">Full-table exact match</button>
+        </div>
+      </div>
+      <div id="lm-tab-chart"></div>
+    </div>
+    <ul>
+      <li>LLaMat wins where <b>domain notation</b> rules (regex-style tables: 0.878 vs ≤0.47 for all commercial models); commercial LLMs win material-ID and composition localization.</li>
+      <li>On whole-table exact match, LLaMat-2-chat gets <b>75%</b>; GPT-4o 7%, Claude-3.5-Sonnet 9%, Claude-3-Haiku 0% — percentages are of JSON-parseable outputs and denominators differ per model (LLaMat-3-chat parses only 602 of 737; raw counts in bar tooltips).</li>
+    </ul>
+    <div class="src">Source: Table E.2 (DiSCoMaT), Fig. 3c–d; dataset §4.1.4 [38].</div>
+  </section>
+
+  <!-- 10 · crystal generation -->
+  <section class="slide">
+    <div class="kicker">05 · Crystal generation</div>
+    <h2>LLaMat-CIF: crystals as text</h2>
+    <p class="note">CIF pretraining → ~6.94M syntactic + semantic CIF instructions → PEFT for unconditional generation. Scored on 10,000 generated structures.</p>
+    <div class="widgetbox">
+      <div class="lm-ctl">
+        <div class="seg" id="lm-cif-seg">
+          <button class="on" aria-pressed="true">Validity ↑</button>
+          <button aria-pressed="false">Coverage ↑</button>
+          <button aria-pressed="false">Stability ↑</button>
+          <button aria-pressed="false">Distribution distance ↓</button>
+        </div>
+      </div>
+      <div id="lm-cif-chart"></div>
+      <div class="lm-read" id="lm-cif-read"></div>
+    </div>
+    <div class="src">Source: Table 1 (baselines from Gruver et al. [9]), §2.3, §4.4.</div>
+  </section>
+
+  <!-- 11 · inside the crystals -->
+  <section class="slide">
+    <div class="kicker">05 · Crystal generation — what comes out</div>
+    <h2>Inside 10,000 LLaMat-2-CIF crystals</h2>
+    <div class="columns">
+      <div>
+        <div class="widgetbox">
+          <div class="lm-pt" id="lm-pt-grid"></div>
+          <div class="lm-read" id="lm-pt-read">Hover an element.</div>
+        </div>
+      </div>
+      <div>
+        <div class="lm-tiles">
+          <div class="lm-tile"><b>49.5%</b><span>M3GNet-stable (&lt;0.1 eV/atom)</span></div>
+          <div class="lm-tile"><b>2–4</b><span>elements in a typical structure</span></div>
+          <div class="lm-tile"><b>R² ≥ 0.96</b><span>cell angles preserved through relaxation (Fig. 4e: 0.97 / 0.97 / 0.962)</span></div>
+          <div class="lm-tile"><b>6.65×</b><span>more triclinic cells after relaxation</span></div>
+        </div>
+        <p class="note">Chemical bias mirrors synthetic accessibility: oxygen dominates (&gt;1,600 structures), transition metals sit at 200–400 each, actinides &lt;50, noble gases absent.</p>
+      </div>
+    </div>
+    <div class="src">Source: Fig. 4 &amp; §2.3. Element banding is schematic, read from the Fig. 4f heatmap (scale max 1,965).</div>
+  </section>
+
+  <!-- 12 · rigidity I -->
+  <section class="slide">
+    <div class="kicker">06 · The headline finding</div>
+    <h2>Adaptation rigidity: the weaker base wins</h2>
+    <div class="widgetbox">
+      <div class="lm-ctl">
+        <div class="seg" id="lm-delta-seg">
+          <button class="on" aria-pressed="true">MatNLP micro-F1</button>
+          <button aria-pressed="false">MatNLP macro-F1</button>
+          <button aria-pressed="false">Tables exact match</button>
+          <button aria-pressed="false">Crystal generation</button>
+        </div>
+      </div>
+      <div id="lm-delta-chart"></div>
+      <div class="lm-read" id="lm-delta-read"></div>
+    </div>
+    <div class="src">Source: Tables E.1–E.2 (chat lineages), Table 1; loss curves Fig. C.1.</div>
+  </section>
+
+  <!-- 13 · rigidity II -->
+  <section class="slide">
+    <div class="kicker">06 · The headline finding — why?</div>
+    <h2>Hypothesis: overtrained minima resist re-shaping</h2>
+    <div class="columns">
+      <div>
+        <ul>
+          <li>LLaMA-3’s <b>far larger pretraining</b> (paper: “~3 orders of magnitude more data”) may leave it <b>saturated</b> — great baseline, poor clay.</li>
+          <li>Hypothesis: the <b>loss landscape near overtrained minima</b> has a “notably different character” [49] — harder to re-shape via CPT.</li>
+          <li>Symptoms everywhere, even the <b>CPT loss curve</b>: LLaMat-2 descends smoothly, LLaMat-3 stays higher and spikier (Fig. C.1). Named <b>“adaptation rigidity”</b> — first report; cf. [35, 36].</li>
+        </ul>
+      </div>
+      <div class="widgetbox">
+        <label class="slider-ctl">domain shift
+          <input type="range" id="lm-loss-s" min="0" max="100" value="55">
+        </label>
+        <div id="lm-loss-chart"></div>
+        <div class="lm-read" id="lm-loss-read"></div>
+      </div>
+    </div>
+    <div class="src">Source: §2.2, Discussion. The widget is a schematic illustration of the hypothesis — not data from the paper.</div>
+  </section>
+
+  <!-- 14 · implications -->
+  <section class="slide">
+    <div class="kicker">Implications</div>
+    <h2>What this means for scientific LLMs</h2>
+    <ul>
+      <li class="frag"><b>Pick bases for adaptability, not leaderboard rank.</b> A saturated model can be the worse starting point for CPT.</li>
+      <li class="frag"><b>7B open + ~30B domain tokens + staged IFT beats GPT-4-class</b> on domain tasks — at deployable cost (8×A100 × 17 days, or ~3 days on 2 Cerebras CS-2s).</li>
+      <li class="frag"><b>Guard the mix:</b> a ~3% replay slice preserves English; dropping MathQA breaks even elementary arithmetic (Table D.3).</li>
+      <li class="frag"><b>Domain knowledge and instruction-following are separable:</b> extra domain IFT (Honeybee) added nothing after Orca + MathQA.</li>
+      <li class="frag"><b>LLMs can be generative crystallographers:</b> text-trained models learn charge neutrality and lattice motifs implicitly.</li>
+    </ul>
+    <div class="src">Source: Discussion; App. D ablations (Tables D.2–D.3).</div>
+  </section>
+
+  <!-- 15 · limitations -->
+  <section class="slide">
+    <div class="kicker">Limitations</div>
+    <h2>Read the fine print</h2>
+    <ul>
+      <li>Only 7–8B models — 70B “could yield superior performance” but was out of compute scope.</li>
+      <li>Lineages aren’t perfectly matched: <b>31.5B CPT tokens for LLaMat-2 vs 10.9B for LLaMat-3</b>, different tokenizers and hardware — rigidity is confounded, not isolated.</li>
+      <li>“Adaptation rigidity” is a <b>hypothesis</b>: no loss-landscape measurement or causal test yet.</li>
+      <li>SIE scoring counts only JSON-parseable outputs; <b>no human evaluation</b> was performed.</li>
+      <li>LLaMat-3-CIF needed <b>~33k generations</b> for 10k usable structures (2.5× LLaMat-2-CIF), and crystal finetuning is hyperparameter-sensitive.</li>
+      <li>Commercial LLMs still lead on table composition/material-ID localization tasks.</li>
+    </ul>
+    <div class="src">Source: §2.1–2.3, §4.1.5, App. C–D.</div>
+  </section>
+
+  <!-- 16 · takeaways -->
+  <section class="slide">
+    <div class="kicker">Takeaways</div>
+    <h2>Three things to remember</h2>
+    <ul>
+      <li><b>Domain CPT works.</b> Two mid-size open models become materials copilots that outscore GPT-4o, Claude-3.5-Sonnet and Gemini-1.5-Pro on materials NLP (93 vs ≤68 micro-F1) and table extraction (75% vs ≤20% exact match).</li>
+      <li><b>The mix is the product.</b> 94% papers + small, deliberate CIF / replay / math slices — each ablates badly if removed.</li>
+      <li><b>More pretraining ≠ more adaptable.</b> LLaMat-2 (from the weaker LLaMA-2) beats LLaMat-3 after identical adaptation — test your base before you commit.</li>
+    </ul>
+    <p>
+      <a class="pill hot" href="https://arxiv.org/abs/2412.09560">arXiv:2412.09560</a>
+      <a class="pill" href="https://github.com/M3RG-IITD/llamat">github.com/M3RG-IITD/llamat</a>
+      <a class="pill" href="index.html">← back to the nn-tensor tutorial</a>
+    </p>
+    <div class="src">Deck data: Tables 1, A.1, D.1–D.3, E.1–E.2; Figs. 1–4, C.1. Approximate values are marked ≈.</div>
+  </section>
+
+</main>
+<div class="deck-chrome">
+  <span class="deck-title"><a href="index.html">🧊 nn-tensor</a> / LLaMat</span>
+  <div class="deck-progress"><div id="deck-fill"></div></div>
+  <span id="deck-counter">1 / 16</span>
+  <span class="deck-hint">← → to navigate</span>
+  <button class="deck-btn" id="deck-prev" aria-label="previous slide">←</button>
+  <button class="deck-btn" id="deck-next" aria-label="next slide">→</button>
+</div>
+<script src="lib.js"></script>
+<script src="slides.js"></script>
+<script src="slides-llamat.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ], throwOnError: false });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>

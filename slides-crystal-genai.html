@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" class="slides-root">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generative AI for Crystal Structures — an interactive tour</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="slides.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
+<style>
+  /* deck-local styles, all prefixed cg- */
+  .cg-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .cg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .cg-card h3 { margin: 0 0 6px; font-size: clamp(14px, 1.6vw, 19px); }
+  .cg-card p { font-size: clamp(12.5px, 1.3vw, 15.5px); color: var(--ink-2); margin: 0 0 6px; }
+  .cg-card .cg-eq { font-size: clamp(12px, 1.25vw, 15px); }
+  .cg-roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .cg-roadmap .cg-card { border-left: 4px solid var(--accent); }
+  .cg-roadmap .cg-num { color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .05em; }
+  .cg-ctrl { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .cg-ctrl label { font-size: 13.5px; color: var(--ink-2); white-space: nowrap; }
+  .cg-ctrl input[type=range] { vertical-align: middle; accent-color: var(--accent); }
+  .cg-tblwrap { max-height: 46vh; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .cg-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .cg-pills .cg-grouplabel { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-right: 2px; }
+  .cg-fpill { border: 1px solid var(--border); background: var(--surface); color: var(--ink-2); border-radius: 999px;
+              padding: 4px 12px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .cg-fpill.on { border-color: var(--accent); color: var(--accent); font-weight: 700; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+  .cg-bars { display: flex; flex-direction: column; gap: 7px; }
+  .cg-barrow { display: grid; grid-template-columns: 110px 1fr 74px; gap: 10px; align-items: center; font-size: 14px; }
+  .cg-bartrack { background: var(--grid); border-radius: 6px; height: 22px; position: relative; }
+  .cg-barfill { height: 100%; border-radius: 6px; background: var(--accent); transition: width .35s; }
+  .cg-barfill.cg-task { background: var(--accent-3); }
+  .cg-barval { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .cg-legend { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .cg-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+  .cg-two { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5vw; align-items: start; }
+  @media (max-width: 900px) { .cg-cards, .cg-roadmap { grid-template-columns: 1fr 1fr; } .cg-two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="slides-body">
+<main class="deck">
+
+  <!-- 1 ─ title -->
+  <section class="slide">
+    <p class="kicker">paper walkthrough · interactive</p>
+    <h1>Generative AI for Crystal Structures</h1>
+    <h3 style="color:var(--ink-2); font-weight:500;">A review — an interactive tour</h3>
+    <p>Pierre-Paul De Breuck · Hai-Chen Wang · Gian-Marco Rignanese · Silvana Botti · Miguel A.&thinsp;L. Marques</p>
+    <p class="note">Ruhr University Bochum · UCLouvain · WEL Research Institute</p>
+    <p><a href="https://arxiv.org/abs/2509.02723">arXiv:2509.02723</a> [cond-mat.mtrl-sci] · September 2025</p>
+    <p class="note" style="margin-top:4vh;">Use ← → (or space / swipe) to navigate. Some slides reveal step by step.</p>
+  </section>
+
+  <!-- 2 ─ roadmap -->
+  <section class="slide">
+    <p class="kicker">roadmap</p>
+    <h2>What the review covers</h2>
+    <div class="cg-roadmap">
+      <div class="cg-card"><div class="cg-num">01</div><h3>The paradigm shift</h3><p>From searching an energy landscape (CSP) to learning \(p(\mathbf{x})\) from data — and sampling it.</p></div>
+      <div class="cg-card"><div class="cg-num">02</div><h3>Representations</h3><p>Lattice + basis, point clouds, voxels, graphs, reciprocal space, Wyckoff positions — and their invariances.</p></div>
+      <div class="cg-card"><div class="cg-num">03</div><h3>Architectures</h3><p>VAEs, GANs, transformers, normalizing flows, diffusion, fine-tuned LLMs.</p></div>
+      <div class="cg-card"><div class="cg-num">04</div><h3>Taxonomy · 61 models</h3><p>Architecture × representation × conditioning × materials domain — explorable catalog.</p></div>
+      <div class="cg-card"><div class="cg-num">05</div><h3>Data &amp; benchmarks</h3><p>The DFT databases behind everything, and why metrics don't yet compare across papers.</p></div>
+      <div class="cg-card"><div class="cg-num">06</div><h3>Applications &amp; outlook</h3><p>Large-scale screening, property-targeted generation, limitations, future directions.</p></div>
+    </div>
+    <p class="src">Structure follows Sections I–VIII of arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 3 ─ CSP vs generative -->
+  <section class="slide">
+    <p class="kicker">why generative?</p>
+    <h2>Crystal-structure prediction vs. learning \(p(\mathbf{x})\)</h2>
+    <div class="columns" style="align-items:start;">
+      <div>
+        <h3>Classical CSP: search</h3>
+        <ul>
+          <li>Explore the potential-energy surface per composition: genetic algorithms (USPEX), particle swarm (CALYPSO), random search, minima hopping</li>
+          <li>Every candidate needs an explicit energy evaluation — expensive at DFT accuracy</li>
+          <li>Chemical composition &amp; atoms per cell usually fixed <em>a priori</em></li>
+          <li>Search space grows exponentially with system size</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Generative AI: sample</h3>
+        <ul>
+          <li class="frag">Learn structural motifs &amp; bonding rules implicitly from large crystal databases</li>
+          <li class="frag">Propose novel, plausible structures directly — no <em>a priori</em> constraints on chemistry or stoichiometry</li>
+          <li class="frag">Bypass the iterative search + initial energy-evaluation loop</li>
+          <li class="frag">Condition on targets: \(p(\mathbf{x}\mid c)\) → proactive <em>in silico</em> design, not trial and error</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Section I, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 4 ─ Boltzmann widget -->
+  <section class="slide">
+    <p class="kicker">the core idea · Fig. 1</p>
+    <h2>Materials live where energy is low: \(p(\mathbf{x}) \propto e^{-E(\mathbf{x})/k_B T}\)</h2>
+    <div class="columns-32" style="align-items:start;">
+      <div class="widgetbox">
+        <div class="cg-ctrl">
+          <label>temperature \(k_B T\): <input type="range" id="cg-bz-temp" min="8" max="200" value="35" style="width:180px;"></label>
+          <span class="readout" id="cg-bz-read" style="margin-top:0;"></span>
+          <button class="btn" id="cg-bz-sample">sample 150 structures</button>
+        </div>
+        <div id="cg-bz-plot"></div>
+      </div>
+      <div>
+        <ul>
+          <li>Training data = known structures ≈ samples near energy minima</li>
+          <li>Deep wells → <b>stable</b> phases; shallow wells → <b>metastable</b> phases</li>
+          <li>Low \(T\): probability collapses onto the ground state. Higher \(T\): metastable modes appear</li>
+          <li>The generative model learns this multimodal \(p(\mathbf{x})\) <em>implicitly</em> — no explicit energies needed at sampling time</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Toy 1-D energy landscape; concept from Fig. 1 and Sec. II.A, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 5 ─ lattice widget -->
+  <section class="slide">
+    <p class="kicker">representing crystals</p>
+    <h2>A crystal = lattice \(\mathbf{L}\) + basis: the \((\mathbf{A},\mathbf{X},\mathbf{L})\) picture</h2>
+    <div class="columns" style="align-items:start;">
+      <div class="widgetbox">
+        <div class="cg-ctrl">
+          <label>\(a\) <input type="range" id="cg-lat-a" min="60" max="150" value="100" style="width:110px;"></label>
+          <label>\(b\) <input type="range" id="cg-lat-b" min="60" max="150" value="120" style="width:110px;"></label>
+          <label>\(\gamma\) <input type="range" id="cg-lat-g" min="45" max="135" value="90" style="width:110px;"></label>
+          <label>atom B frac. coord <input type="range" id="cg-lat-u" min="10" max="90" value="60" style="width:110px;"></label>
+        </div>
+        <div id="cg-lat-plot"></div>
+        <div class="readout" id="cg-lat-read"></div>
+      </div>
+      <div>
+        <ul>
+          <li>Species \(\mathbf{A}=\{s_i\}\), coordinates \(\mathbf{X}\), lattice \(\mathbf{L}=(a,b,c,\alpha,\beta,\gamma)\)</li>
+          <li><b>Fractional coordinates</b> live in the unit cell — change the lattice and every periodic image follows</li>
+          <li>Invertible: from \((\mathbf{A},\mathbf{X},\mathbf{L})\) the full crystal is reconstructed exactly</li>
+          <li>Wanted invariances: translation, rotation, permutation — strict or learned via augmentation</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Sec. II.D.1 (point cloud / AXL representation), arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 6 ─ representation zoo -->
+  <section class="slide">
+    <p class="kicker">representation zoo</p>
+    <h2>Five ways to encode a crystal</h2>
+    <div class="widgetbox">
+      <div class="seg" id="cg-rep-seg" role="tablist">
+        <button class="on" data-rep="pc" aria-pressed="true">Point cloud / AXL</button>
+        <button data-rep="vox" aria-pressed="false">Voxel grid</button>
+        <button data-rep="gr" aria-pressed="false">Graph</button>
+        <button data-rep="rec" aria-pressed="false">Reciprocal space</button>
+        <button data-rep="wy" aria-pressed="false">Wyckoff positions</button>
+      </div>
+      <div id="cg-rep-detail" style="margin-top:12px;"></div>
+    </div>
+    <p>Generative modeling needs <b>invertible</b> representations — exact reconstruction of the crystal, unlike supervised descriptors. Reciprocal space: \(F(hkl)=\sum_j f_j\, e^{-2\pi i (hx_j + ky_j + lz_j)}\).</p>
+    <p class="src">Source: Sec. II.D, arXiv:2509.02723 (230 space groups, 1&thinsp;771 Wyckoff positions).</p>
+  </section>
+
+  <!-- 7 ─ architecture zoo -->
+  <section class="slide">
+    <p class="kicker">architecture zoo · Fig. 2</p>
+    <h2>Six ways to learn \(p(\mathbf{x})\)</h2>
+    <div class="cg-cards">
+      <div class="cg-card"><h3>VAE</h3><p class="cg-eq">\(\max\; \mathbb{E}[\log p_\theta(\mathbf{x}|\mathbf{z})] - D_{\mathrm{KL}}(q_\phi \Vert p)\)</p><p>Encode to a smooth latent space, decode to reconstruct; sample the prior for new structures.</p></div>
+      <div class="cg-card"><h3>GAN</h3><p class="cg-eq">\(\min_G \max_D\; \mathbb{E}[\log D] + \mathbb{E}[\log(1{-}D(G))]\)</p><p>Generator vs. discriminator game; no explicit \(p(\mathbf{x})\), prone to mode collapse.</p></div>
+      <div class="cg-card"><h3>Transformer</h3><p class="cg-eq">\(p(\mathbf{x}) = \prod_i p(x_i \mid \mathbf{x}_{&lt;i})\)</p><p>Autoregressive over tokens — atoms, bonds, symmetry descriptors as sequences.</p></div>
+      <div class="cg-card"><h3>Normalizing flow</h3><p class="cg-eq">\(\log p_{\mathbf x}(\mathbf x) = \log p_{\mathbf z}(f^{-1}(\mathbf x)) + \log\bigl|\det \tfrac{\partial f^{-1}}{\partial \mathbf x}\bigr|\)</p><p>Invertible maps, exact likelihood; flow matching gives a simple training objective.</p></div>
+      <div class="cg-card"><h3>Diffusion</h3><p class="cg-eq">\(\mathcal{L} = \mathbb{E}\,\bigl[\Vert \boldsymbol\epsilon - \boldsymbol\epsilon_\theta(\mathbf{x}_t, t)\Vert^2\bigr]\)</p><p>Noise data to Gaussian, learn to denoise step by step; DDIM / score-based SDE variants.</p></div>
+      <div class="cg-card"><h3>Fine-tuned LLM</h3><p class="cg-eq">pretrained → fine-tuned on CIF</p><p>Treat crystallographic files as language; learn the "grammar" of crystal structures.</p></div>
+    </div>
+    <p class="src">Source: Fig. 2 and Sec. II.C, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 8 ─ diffusion widget -->
+  <section class="slide">
+    <p class="kicker">diffusion, hands on</p>
+    <h2>Forward noising \(q(\mathbf{x}_t|\mathbf{x}_{t-1})\) · reverse denoising \(p_\theta(\mathbf{x}_{t-1}|\mathbf{x}_t)\)</h2>
+    <div class="columns" style="align-items:start;">
+      <div class="widgetbox">
+        <div class="cg-ctrl">
+          <button class="btn" id="cg-df-fwd">noise ▶</button>
+          <button class="btn" id="cg-df-rev">◀ denoise</button>
+          <label>t <input type="range" id="cg-df-t" min="0" max="100" value="0" style="width:150px;"></label>
+          <span class="readout" id="cg-df-read" style="margin-top:0;"></span>
+        </div>
+        <div id="cg-df-plot"></div>
+      </div>
+      <div>
+        <ul>
+          <li>A 2-species toy crystal: atoms diffuse to an isotropic Gaussian, then are pulled back onto the lattice</li>
+          <li><b>CDVAE</b> (2022): the foundational model — Langevin denoising of coordinates + types, SE(3)-equivariant GNN score</li>
+          <li><b>DiffCSP</b>: joint diffusion of lattice + fractional coordinates, no VAE</li>
+          <li><b>MatterGen</b>: diffuses <em>fractional</em> coordinates with a wrapped normal — periodicity respected by construction</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Sec. II.C.5 (DDPM), Sec. IV.B (CDVAE, DiffCSP, MatterGen), arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 9 ─ LLMs -->
+  <section class="slide">
+    <p class="kicker">the surprise contender</p>
+    <h2>LLMs write crystals: CIF as a language</h2>
+    <div class="columns" style="align-items:start;">
+      <div>
+        <ul>
+          <li><b>XYZTransformer</b> (2023): GPT-like model on XYZ/CIF/PDB text — valid structures without domain-specific representations</li>
+          <li><b>CrystalTextLLM</b>: Llama-2 70B fine-tuned on textual point clouds, digit-by-digit number tokens, flexible text conditioning + infilling</li>
+          <li><b>CrystaLLM</b>: LLaMA-style model trained from scratch on CIFs — ≈53% symmetry-valid, ≈17% match known prototypes</li>
+          <li><b>GenMS</b>: LLM proposes formulas from natural language, diffusion builds the 3-D structure — beats direct CIF prompting</li>
+          <li><b>MatExpert</b>: conversational agent that retrieves a similar material, proposes edits, and explains its reasoning</li>
+          <li><b>MatLLMSearch</b>: LLM as crossover/mutation operator inside evolutionary search — no fine-tuning at all</li>
+        </ul>
+      </div>
+      <div class="widgetbox" style="font-family:var(--mono, ui-monospace, monospace); font-size:clamp(12px,1.3vw,15px); line-height:1.6;">
+        <p class="note" style="margin-bottom:6px;">the flavor of a CIF "sentence" an LLM learns to complete:</p>
+        <div>data_LiMnO<sub>4</sub><br>
+        _symmetry_space_group_name "P m 2 n"<br>
+        _cell_length_a&nbsp;&nbsp;5.74<br>
+        _cell_length_b&nbsp;&nbsp;2.91 …<br>
+        Li&nbsp;&nbsp;0.000&nbsp;&nbsp;0.500&nbsp;&nbsp;0.376<br>
+        Mn&nbsp;&nbsp;0.500&nbsp;&nbsp;0.000&nbsp;&nbsp;0.622 …</div>
+        <p class="note" style="margin-top:10px;">Prompt-conditioned generation: describe composition, symmetry, even target properties in plain text.</p>
+      </div>
+    </div>
+    <p class="src">Source: Sec. IV.D, arXiv:2509.02723 (illustrative CIF snippet, not from the paper).</p>
+  </section>
+
+  <!-- 10 ─ taxonomy pillars -->
+  <section class="slide">
+    <p class="kicker">taxonomy · Table II</p>
+    <h2>Four axes classify every model</h2>
+    <div class="cg-cards" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="cg-card"><h3>1 · Representation</h3><p>How the crystal is encoded as input/output.</p>
+        <span class="pill">voxel grid</span> <span class="pill">graph</span> <span class="pill">Wyckoff</span> <span class="pill">point cloud</span> <span class="pill">reciprocal space</span> <span class="pill">CIF / text</span></div>
+      <div class="cg-card"><h3>2 · Architecture</h3><p>The core generative framework.</p>
+        <span class="pill">VAE</span> <span class="pill">GAN</span> <span class="pill">normalizing flow</span> <span class="pill">diffusion</span> <span class="pill">transformer</span> <span class="pill">fine-tuned LLM</span></div>
+      <div class="cg-card"><h3>3 · Conditioning</h3><p>Extra information guiding generation — "yes" only if a functional property is demonstrated.</p>
+        <span class="pill">unconditional</span> <span class="pill">composition</span> <span class="pill">space group</span> <span class="pill">band gap</span> <span class="pill">formation energy</span></div>
+      <div class="cg-card"><h3>4 · Materials domain</h3><p>Scope of training data and generated compounds.</p>
+        <span class="pill">oxides / halides</span> <span class="pill">perovskites</span> <span class="pill">alloys</span> <span class="pill hot">all structures</span></div>
+    </div>
+    <p>Fig. 3 plots models in the architecture × representation plane: GANs cluster on voxels/point clouds (early), <b>diffusion on graphs + point clouds dominates recent work</b>, LLMs on text, flows emerging.</p>
+    <p class="src">Source: Table II and Fig. 3, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 11 ─ catalog widget -->
+  <section class="slide">
+    <p class="kicker">the model catalog · Table III</p>
+    <h2>61 generative models, explorable</h2>
+    <div class="widgetbox">
+      <div class="cg-pills" id="cg-cat-arch"><span class="cg-grouplabel">architecture</span></div>
+      <div class="cg-pills" id="cg-cat-rep"><span class="cg-grouplabel">representation</span></div>
+      <div class="cg-pills" id="cg-cat-cond"><span class="cg-grouplabel">conditioned</span></div>
+      <div class="readout" id="cg-cat-count" style="margin:4px 0 10px;"></div>
+      <div class="cg-tblwrap">
+        <table class="cheat">
+          <thead><tr><th>Model</th><th>Representation</th><th>Architecture</th><th>Cond.</th><th>Domain</th><th>Year</th></tr></thead>
+          <tbody id="cg-cat-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="src">Source: Table III, arXiv:2509.02723 (all 61 rows; "Cond." = authors demonstrate conditioning on a functional property).</p>
+  </section>
+
+  <!-- 12 ─ conditioning -->
+  <section class="slide">
+    <p class="kicker">steering generation</p>
+    <h2>From \(p(\mathbf{x})\) to \(p(\mathbf{x} \mid c)\): inverse design</h2>
+    <div class="columns" style="align-items:start;">
+      <div>
+        <h3>What \(c\) can be</h3>
+        <ul>
+          <li class="frag"><b>Composition</b> — a chemical formula or element set</li>
+          <li class="frag"><b>Symmetry</b> — space group / crystal system (DiffCSP++, CrystalFormer sample Wyckoff descriptors per space group)</li>
+          <li class="frag"><b>Scalar properties</b> — band gap, formation energy, density, pressure (Cond-CDVAE, CrystalFlow)</li>
+          <li class="frag"><b>Free text</b> — e.g. "LiMnO₄ with orthorhombic structure" (TGDMat, Chemeleon)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>How it's injected</h3>
+        <ul>
+          <li>Condition vector into latent space + Langevin dynamics (Cond-CDVAE)</li>
+          <li>Lightweight <b>adapter modules</b> in the score network — property control without retraining the full model (MatterGen)</li>
+          <li>Guided masking of diffusion denoising steps (SCIGEN)</li>
+          <li>Plain prompting for LLM-based models</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Sec. II.B, IV.B–D, VI.B, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 13 ─ data widget -->
+  <section class="slide">
+    <p class="kicker">training data · Table I</p>
+    <h2>The databases behind the models</h2>
+    <div class="columns-32" style="align-items:start;">
+      <div class="widgetbox">
+        <div class="cg-ctrl">
+          <div class="seg" id="cg-db-scale"><button class="on" data-s="log" aria-pressed="true">log scale</button><button data-s="lin" aria-pressed="false">linear</button></div>
+          <span class="note">hover a bar for details</span>
+        </div>
+        <div class="cg-bars" id="cg-db-bars"></div>
+        <div class="cg-legend"><span class="cg-swatch" style="background:var(--accent);"></span>general DFT database &nbsp; <span class="cg-swatch" style="background:var(--accent-3);"></span>task-specific set</div>
+        <div class="readout" id="cg-db-read">hover a bar…</div>
+      </div>
+      <div>
+        <ul>
+          <li>Mostly DFT-relaxed structures at GGA (PBE) level — models inherit the functional's strengths <em>and</em> biases</li>
+          <li><b>Alexandria</b> (4.5M, MP-compatible) enabled the jump in quality of MatterGen &amp; Matra-Genoa</li>
+          <li>ICSD = experimental structures, commercial license; MP filters by ICSD provenance or E<sub>hull</sub> &lt; 80 meV/atom</li>
+          <li>OPTIMADE API: one common access layer over the major databases</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Table I and Sec. III, arXiv:2509.02723 (Perov-5 ≈19k, Carbon-24 &gt;100k from Sec. III text).</p>
+  </section>
+
+  <!-- 14 ─ metrics -->
+  <section class="slide">
+    <p class="kicker">benchmarks · Sec. V</p>
+    <h2>How models are judged — and why comparisons fail</h2>
+    <div class="columns" style="align-items:start;">
+      <div>
+        <h3>The metric stack</h3>
+        <ul style="font-size:clamp(13.5px,1.5vw,18px);">
+          <li><b>Validity</b> — charge balance, sensible distances, symmetry (&gt;90% typical, says little about stability)</li>
+          <li><b>Stability</b> — energy above convex hull, e.g. &lt;100 meV/atom; DFT or, increasingly, uMLIP relaxation</li>
+          <li><b>Uniqueness</b> (in-batch) · <b>Novelty</b> (vs. training set) · <b>rediscovery rate</b></li>
+          <li><b>S.U.N.</b> — stable ∧ unique ∧ novel, the combined headline metric</li>
+          <li><b>Efficiency</b> — TGDMat: 500 epochs vs. &gt;3000 for CDVAE / DiffCSP</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The review's critique</h3>
+        <ul style="font-size:clamp(13.5px,1.5vw,18px);">
+          <li class="frag">No universal E-hull threshold or shared reference hull — cross-paper numbers don't compare</li>
+          <li class="frag">In-house random splits instead of standardized test sets</li>
+          <li class="frag">Uniqueness/novelty depend on batch size &amp; matching algorithm</li>
+          <li class="frag">Many papers use formation energy without a proper hull at all</li>
+          <li class="frag">Consequence: <b>the review deliberately refuses to rank models</b></li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Sec. V, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 15 ─ applications -->
+  <section class="slide">
+    <p class="kicker">does it work? · Sec. VI</p>
+    <h2>Generated structures that survived DFT</h2>
+    <div class="cg-cards">
+      <div class="cg-card"><div class="stat-value" style="color:var(--accent);">10M → 506</div><p><b>CubicGAN</b>: 10 million cubic candidates → 506 mechanically &amp; dynamically stable, 4 brand-new prototypes</p></div>
+      <div class="cg-card"><div class="stat-value" style="color:var(--accent);">75%</div><p><b>MatterGen</b>: of 1&thinsp;000 DFT-validated samples within 100 meV/atom of the hull; RMSE &lt; 0.076 Å vs. relaxed; trained on 607&thinsp;683 structures</p></div>
+      <div class="cg-card"><div class="stat-value" style="color:var(--accent);">100% → 52%</div><p><b>MatterGen</b> uniqueness from 1k to 10M samples; novelty ≈60% up to 1M, then ≈47% — scaling erodes S.U.N.</p></div>
+      <div class="cg-card"><div class="stat-value" style="color:var(--accent);">12&thinsp;550</div><p>unique novel <b>Li-battery</b> candidates ≤100 meV/atom (of 32&thinsp;600 generated with MatterGen + MatterSim screening)</p></div>
+      <div class="cg-card"><div class="stat-value" style="color:var(--accent);">Ba₂SrInFeO₆</div><p>novel thermodynamically stable quinary oxide for <b>thermochemical water splitting</b> (MatterGen, E<sub>hull</sub> ≤ 10 meV/atom condition)</p></div>
+      <div class="cg-card"><div class="stat-value" style="color:var(--accent);">7 + 23</div><p><b>CGWGAN</b>: 7 new stable Ba–Ru–O structures · <b>GANCSP</b>: 23 Mg–Mn–O photoanode candidates, 2 on/near the hull</p></div>
+    </div>
+    <p class="src">Source: Sec. VI.A–B, arXiv:2509.02723 (uniqueness/novelty ≈ values as stated in text).</p>
+  </section>
+
+  <!-- 16 ─ limitations & future -->
+  <section class="slide">
+    <p class="kicker">honest accounting · Sec. VII</p>
+    <h2>Limitations &amp; where the field is going</h2>
+    <div class="columns" style="align-items:start;">
+      <div>
+        <h3>Today's blind spots</h3>
+        <ul style="font-size:clamp(13.5px,1.5vw,18px);">
+          <li>Fully ordered crystals at \(T = 0\) K, full site occupancy — no alloys, vacancies, point defects</li>
+          <li>Data biased toward small unit cells, certain chemistries, GGA energetics</li>
+          <li>Design-space regions unexplored: diffusion in reciprocal space, flows on Wyckoff positions</li>
+          <li>Fragmented benchmarks; synthesizability rarely assessed</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Future directions</h3>
+        <ul style="font-size:clamp(13.5px,1.5vw,18px);">
+          <li>Symmetry, charge neutrality &amp; minimal distances <b>by construction</b> (crystallographic manifolds)</li>
+          <li>Couple to energy surrogates: \(p(\mathbf{x}) \propto e^{-\beta E_\phi(\mathbf{x})}\) via uMLIPs, EBMs, RL, GFlowNets</li>
+          <li>Multi-objective &amp; natural-language conditioning; Pareto-front sampling</li>
+          <li>Community benchmarks: frozen convex hulls, fixed test sets, reported compute cost</li>
+          <li>Generative models as <b>seed proposers</b> in autonomous discovery loops — not one-shot oracles</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Source: Sec. VII, arXiv:2509.02723.</p>
+  </section>
+
+  <!-- 17 ─ takeaways -->
+  <section class="slide">
+    <p class="kicker">takeaways</p>
+    <h2>What to remember</h2>
+    <ul style="font-size:clamp(15px,1.9vw,23px);">
+      <li><b>Paradigm shift</b>: stop searching \(E(\mathbf{x})\) composition by composition — learn \(p(\mathbf{x}) \propto e^{-E/k_BT}\) from databases and sample it</li>
+      <li><b>Representation is the real design choice</b>: point clouds, voxels, graphs, reciprocal space, Wyckoff positions — invertibility and symmetry decide what a model can do</li>
+      <li><b>Diffusion on point clouds + graphs dominates</b> (CDVAE → DiffCSP → MatterGen); Wyckoff models buy symmetry; LLMs are surprisingly capable crystal writers</li>
+      <li><b>Conditioning turns generation into inverse design</b> — composition, space group, properties, even free text</li>
+      <li><b>Benchmarking is the weak point</b>: 61 models, no standardized S.U.N. protocol — the review refuses to crown a winner</li>
+    </ul>
+    <p style="margin-top:3vh;">
+      <a href="https://arxiv.org/abs/2509.02723">paper: arXiv:2509.02723</a> &nbsp;·&nbsp;
+      <a href="index.html">← back to the nn-tensor tutorial</a>
+    </p>
+  </section>
+
+</main>
+<div class="deck-chrome">
+  <span class="deck-title"><a href="index.html">🧊 nn-tensor</a> / crystal gen-AI</span>
+  <div class="deck-progress"><div id="deck-fill"></div></div>
+  <span id="deck-counter">1 / 17</span>
+  <span class="deck-hint">← → to navigate</span>
+  <button class="deck-btn" id="deck-prev" aria-label="previous slide">←</button>
+  <button class="deck-btn" id="deck-next" aria-label="next slide">→</button>
+</div>
+<script src="lib.js"></script>
+<script src="slides.js"></script>
+<script src="slides-crystal-genai.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tryRender = () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ], throwOnError: false });
+    } else { setTimeout(tryRender, 100); }
+  };
+  tryRender();
+});
+</script>
+</body>
+</html>

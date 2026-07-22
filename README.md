@@ -53,6 +53,17 @@ lemma, a "chain of links" worked example whose crossing unfolding is a giant ide
 live ALS fits that land exactly on the theoretical error curve √((2^d−R)/2^d), and the
 Khrulkov–Novikov–Oseledets / Cohen–Sharir–Shashua depth-separation theorems.
 
+There are also two **interactive paper slide decks** (arrow keys / swipe to navigate) built on a
+shared deck framework (slides.css + slides.js):
+
+- [slides-crystal-genai.html](https://yaroslavvb.github.io/nn-tensor/slides-crystal-genai.html) —
+  "Generative AI for Crystal Structures: A Review" (arXiv:2509.02723): CSP vs generative paradigm,
+  representations, architecture zoo, an explorable 61-model taxonomy catalog, datasets, metrics.
+- [slides-llamat.html](https://yaroslavvb.github.io/nn-tensor/slides-llamat.html) —
+  "Foundational LLMs for Materials Research" / LLaMat (arXiv:2412.09560): the CPT→IFT→PEFT recipe,
+  benchmark results vs GPT-4o/Claude/Gemini, LLaMat-CIF crystal generation, and the
+  adaptation-rigidity finding.
+
 ## Run locally
 
 Any static server works:
